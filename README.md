@@ -17,7 +17,7 @@ usdt = 10  # Cantidad de dolares para abrir posicion.
 tp_porcent = 0.2  # Take profit porcentaje
 sl_porcent = 0.4  # Stop loss porcentaje
 ```
-- Antes de ejecutar el Script deberas instalar la libreria de Python de Binance `pip install pybit`
+- Antes de ejecutar el Script deberas instalar la libreria de Python de Bybit `pip install pybit`
 - Una vez guardado el archivo debes ejecutarlo desde una terminal de windows o de tu sistema operativo que uses con el siguiente comando.
 `python script.py`
 

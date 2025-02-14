@@ -103,10 +103,6 @@ def operar(simbolos):
                     openInterest = float(ticker['result']['list'][0]['openInterest'])
                     fundingRate = float(ticker['result']['list'][0]['fundingRate'])
 
-                    # cacular % precio incremento o aumento en las ultimas 24hs
-                    # si price24hPcnt es positivo, el precio ha subido, si es negativo, el precio ha bajado
-                    # tengo price24hPcnt = cuanto subio o bajo el precio en las ultimas 24hs, precio = precio actual entonces
-                    p24h = (precio - (precio / (1 + price24hPcnt))) * 100
 
                     cci = calcular_cci(high_prices, low_prices, close_prices)
 
@@ -124,7 +120,7 @@ def operar(simbolos):
                     # Llamar a la función para detectar cambio de tendencia
                     tendencia = detectar_cambio_tendencia(open_prices, high_prices, low_prices, close_prices)
                     tendencia2 = detectar_tendencia_bb_cci(high_prices, low_prices, close_prices)
-                    log_message = f"{time.strftime('%Y-%m-%d %H:%M:%S')}\t{symbol:<15} Price: {precio:<12.5f}\tp24h: {p24h:<3.1f}\tFF: {fundingRate:<3.3f}\t{str(precio >= data['UpperBand']):<5}\t{str(precio <= data['LowerBand']):<5}\tBB_W: {data['BB_Width_%']:<5.0f}\tRSI: {rsi:<5.0f}\tcci: {cci:<5.0f}\tt1:{tendencia:<8}\tt2:{tendencia2:<8}"
+                    log_message = f"{time.strftime('%Y-%m-%d %H:%M:%S')}\t{symbol:<15} Price: {precio:<12.5f}\tp24h: {price24hPcnt:<12.5f}\tFF: {fundingRate:<3.5f}\t{str(precio >= data['UpperBand']):<5}\t{str(precio <= data['LowerBand']):<5}\tBB_W: {data['BB_Width_%']:<5.0f}\tRSI: {rsi:<5.0f}\tcci: {cci:<5.0f}\tt1:{tendencia:<8}\tt2:{tendencia2:<8}"
                     logger(log_message)
 
                     if precio > data['UpperBand'] and rsi > top_rsi:

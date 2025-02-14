@@ -20,7 +20,7 @@ logger(f"Bot iniciado {timeframe}")
 saldo_usdt_inicial = 0
 try:
     saldo_usdt_inicial = obtener_saldo_usdt()
-    logger("Saldo USDT:"+ saldo_usdt_inicial)
+    logger("Saldo USDT:"+ str(saldo_usdt_inicial))
 except Exception as e:
     logger(e)
 

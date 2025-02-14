@@ -148,8 +148,10 @@ def get_bybit_kline(symbol, interval=timeframe, limit=100):
         return None
 
 def qty_precision(qty, precision):
+    logger(f"analizar_posible_orden qty_precision: {qty} - {precision}")
     qty = math.floor(qty / precision) * precision
-    return qty
+    logger(f"analizar_posible_orden qty_precision2: {qty} - {precision}")
+    return float(f"{qty:.4f}")
 
 def qty_step(price, symbol):
     step = client.get_instruments_info(category="linear", symbol=symbol)

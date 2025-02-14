@@ -22,7 +22,7 @@ try:
     saldo_usdt_inicial = obtener_saldo_usdt()
     logger("Saldo USDT:"+ str(saldo_usdt_inicial))
 except Exception as e:
-    logger(e)
+    logger(str(e))
 
 opened_positions = [];
 def operar(simbolos):

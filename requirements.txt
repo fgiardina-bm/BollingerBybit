@@ -1,3 +1,7 @@
 pandas==2.2.3
 pybit==5.9.0
 python-dotenv==1.0.1
+numpy==2.2.2
+TA-Lib==0.6.3
+matplotlib==3.10.0
+scipy==1.15.1

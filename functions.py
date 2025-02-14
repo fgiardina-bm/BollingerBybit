@@ -290,7 +290,7 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
 
                 if side == "Sell": # bollineger y RSI altos
                     if bollinger['UpperBand'] < bollinger_init_data['UpperBand'] or (rsi - verify_rsi) < rsi_init_data:
-                        logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty}")
+                        logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty}  - rsi {rsi} - verify_rsi {verify_rsi} - rsi_init_data {rsi_init_data} ")
                         crear_orden(symbol, side, order_type, qty)
                         # Iniciar el monitoreo de la operación
                         precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
@@ -302,7 +302,7 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
 
                 else:
                     if bollinger['LowerBand'] > bollinger_init_data['LowerBand'] or (rsi + verify_rsi) > rsi_init_data:
-                        logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty}")
+                        logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty}  - rsi {rsi} - verify_rsi {verify_rsi} - rsi_init_data {rsi_init_data} ")
                         crear_orden(symbol, side, order_type, qty)
                         # Iniciar el monitoreo de la operación
                         precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])

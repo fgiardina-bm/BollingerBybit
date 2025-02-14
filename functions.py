@@ -18,7 +18,7 @@ def obtener_orderbook(symbol):
         orderbook = response["result"]
         return orderbook
     else:
-        logger("Error en la API:", response["retMsg"])
+        logger("Error en la API:" + response["retMsg"])
         return None
 
 def obtener_datos_historicos(symbol, interval, limite=200):
@@ -56,11 +56,11 @@ def obtener_simbolos_mayor_volumen(cnt=10):
             
             # Mostrar el volumen de cada símbolo
             for ticker in usdt_tickers[:cnt]:
-                logger(f"Símbolo: {ticker['symbol']}, Volumen: {float(ticker['turnover24h']) / 1000000:.2f} M")
+                logger(f"Símbolo: {ticker['symbol']} Volumen: {float(ticker['turnover24h']) / 1000000:.2f} M")
             
             return top_10_simbolos
         else:
-            logger("Error en la API:", tickers["retMsg"])
+            logger("Error en la API:" + tickers["retMsg"])
             return []
     except Exception as e:
         logger(f"Error al obtener los símbolos con mayor volumen: {e}")
@@ -78,11 +78,11 @@ def obtener_simbolos_mayor_open_interest(cnt=10):
             
             # Mostrar el open interest de cada símbolo
             for ticker in usdt_tickers[:cnt]:
-                logger(f"Símbolo: {ticker['symbol']}, Open Interest: {ticker['openInterest']}")
+                logger(f"Símbolo: {ticker['symbol']} Open Interest: {ticker['openInterest']}")
             
             return top_10_simbolos
         else:
-            logger("Error en la API:", tickers["retMsg"])
+            logger("Error en la API:"+ tickers["retMsg"])
             return []
     except Exception as e:
         logger(f"Error al obtener los símbolos con mayor open interest: {e}")
@@ -95,7 +95,7 @@ def obtener_saldo_usdt():
             saldo_usdt = float(balance['result']['list'][0]['totalAvailableBalance'])
             return saldo_usdt
         else:
-            logger("Error en la API:", balance["retMsg"])
+            logger("Error en la API:"+ balance["retMsg"])
             return 0.0
     except Exception as e:
         logger(f"Error al obtener el saldo en USDT: {e}")
@@ -118,7 +118,7 @@ def verificar_posicion_abierta(symbol):
             # print(f"No hay posiciones abiertas en {symbol}")
             return False
         else:
-            logger("Error en la API:", posiciones["retMsg"])
+            logger("Error en la API:"+ posiciones["retMsg"])
             return False
     except Exception as e:
         logger(f"Error al verificar la posición abierta en {symbol}: {e}")
@@ -143,7 +143,7 @@ def get_bybit_kline(symbol, interval=timeframe, limit=100):
         closes = [float(candle[4]) for candle in kline]
         return pd.Series(closes[::-1])
     else:
-        logger("Error en la API:", response["retMsg"])
+        logger("Error en la API:"+ response["retMsg"])
         return None
 
 def qty_precision(qty, precision):

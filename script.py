@@ -17,8 +17,12 @@ from indicators import *
 
 logger(f"Bot iniciado {timeframe}")
 
-saldo_usdt_inicial = obtener_saldo_usdt()
-logger("Saldo USDT:", saldo_usdt_inicial)
+saldo_usdt_inicial = 0
+try:
+    saldo_usdt_inicial = obtener_saldo_usdt()
+    logger("Saldo USDT:"+ saldo_usdt_inicial)
+except Exception as e:
+    logger(e)
 
 opened_positions = [];
 def operar(simbolos):
@@ -39,10 +43,6 @@ def operar(simbolos):
 
                 posiciones = client.get_positions(category="linear", symbol=symbol)
                 if float(posiciones['result']['list'][0]['size']) != 0:
-                    try:
-                        logger(json.dumps(posiciones['result']['list'][0], indent=4))
-                    except Exception as e:
-                        logger(e)
 
                     if symbol not in opened_positions:
                         opened_positions.append(symbol)

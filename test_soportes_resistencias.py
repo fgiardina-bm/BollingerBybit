@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from scipy.stats import mode
 
 class SoportesResistencias:
@@ -29,20 +28,6 @@ class SoportesResistencias:
                 
         return np.array(niveles_filtrados)
     
-    def visualizar_niveles(self, precios, niveles):
-        """
-        Grafica los precios con los niveles de soporte y resistencia.
-        """
-        plt.figure(figsize=(12, 6))
-        plt.plot(precios, label="Precios", alpha=0.7)
-        for nivel in niveles:
-            plt.axhline(y=nivel, color='r', linestyle='--', alpha=0.7)
-        plt.title("Soportes y Resistencias")
-        plt.xlabel("Tiempo")
-        plt.ylabel("Precio")
-        plt.legend()
-        plt.show()
-
 # Ejemplo de uso con datos ficticios
 cierres_4h = np.random.normal(30000, 500, 200)  # Simulación de precios
 cierres_diario = np.random.normal(30000, 700, 100)
@@ -60,9 +45,5 @@ niveles_semanal = sr.calcular_niveles()
 niveles_finales = sr.consolidar_niveles(niveles_4h, niveles_diario, niveles_semanal)
 
 print("Soportes y resistencias fuertes:", niveles_finales)
-
-# Visualizar los niveles
-sr.visualizar_niveles(np.concatenate([cierres_4h, cierres_diario, cierres_semanal]), niveles_finales)
-
 
 # docker run --rm -it -v ./test_soportes_resistencias.py:/app/script.py --env-file .prod.env bot-bollinger-bybit

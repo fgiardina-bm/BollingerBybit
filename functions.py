@@ -351,7 +351,7 @@ def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):
             break
 
 
-def logger(log_message):
+def logger(log_message,aditional_text=""):
     log_path = f"logs/log-{timeframe}-{time.strftime('%Y%m%d')}.txt"
     with open(log_path, "a") as log_file:
-        log_file.write(timeframe + '|' + log_message + "\n")
+        log_file.write(timeframe + '|' + log_message + aditional_text + "\n")

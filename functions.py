@@ -194,7 +194,6 @@ def establecer_stop_loss(symbol, sl):
             positionIdx=0
         )
   
-        logger(order)
         return order
     except Exception as e:
         logger(f"Error al establecer el stop loss para {symbol}: {e}")

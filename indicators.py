@@ -38,8 +38,6 @@ def calcular_sma(closes, timeperiod=30):
     sma = talib.SMA(np.array(closes), timeperiod=timeperiod)
     return sma[-1]
 
-
-
 def detectar_tendencia_bb_cci(high_prices, low_prices, close_prices):
     """
     Detecta señales de cambio de tendencia usando Bollinger Bands y CCI.
@@ -78,9 +76,6 @@ def detectar_tendencia_bb_cci(high_prices, low_prices, close_prices):
     # No hay señal clara
     return 0
 
-
-
-
 def calcular_cci(high_prices, low_prices, close_prices):
 
     # Calcular CCI
@@ -89,7 +84,6 @@ def calcular_cci(high_prices, low_prices, close_prices):
     cci_value = cci[-1]
 
     return cci_value
-
 
 def detectar_cambio_tendencia(open_prices, high_prices, low_prices, close_prices):
     """
@@ -133,9 +127,6 @@ def detectar_cambio_tendencia(open_prices, high_prices, low_prices, close_prices
 
     return 0  # No hay señal clara
 
-
-
-
 def detectar_soportes_resistencias(high_prices, low_prices, period=50):
     """
     Detecta niveles de soporte y resistencia usando máximos y mínimos locales.
@@ -157,7 +148,6 @@ def detectar_soportes_resistencias(high_prices, low_prices, period=50):
     
     return soporte[-1], resistencia[-1]
  
-
 def soporte_resistencias(precios, bins=20):
     """
     Encuentra los niveles de soporte y resistencia basándose en la frecuencia de precios cercanos.

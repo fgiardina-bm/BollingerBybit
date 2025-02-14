@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from scipy.stats import mode
 
 class SoportesResistencias:
     def __init__(self, precios):

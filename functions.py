@@ -127,6 +127,7 @@ def verificar_posicion_abierta(symbol):
 def verificar_posicion_abierta_details(symbol):
     try:
         posiciones = client.get_positions(category="linear", symbol=symbol)
+        return posiciones
     except Exception as e:
         logger(f"Error al verificar la posición abierta en {symbol}: {e}")
 

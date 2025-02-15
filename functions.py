@@ -289,7 +289,7 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
                 rsi = calcular_rsi_talib(datam[4])
 
                 if side == "Sell": # bollineger y RSI altos
-                    if bollinger['UpperBand'] < bollinger_init_data['UpperBand'] or (rsi - verify_rsi) < rsi_init_data:
+                    if bollinger['UpperBand'] < bollinger_init_data['UpperBand'] or (rsi + verify_rsi) < rsi_init_data:
                         logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty}  - rsi {rsi} - verify_rsi {verify_rsi} - rsi_init_data {rsi_init_data} ")
                         crear_orden(symbol, side, order_type, qty)
                         # Iniciar el monitoreo de la operación
@@ -301,7 +301,7 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
                         logger(f"analizar_posible_orden en {symbol} - SELL RSI en {symbol} es mayor a {rsi_init_data} - Actual UB: {bollinger['UpperBand']} - Inicial UB: {bollinger_init_data['UpperBand']}")
 
                 else:
-                    if bollinger['LowerBand'] > bollinger_init_data['LowerBand'] or (rsi + verify_rsi) > rsi_init_data:
+                    if bollinger['LowerBand'] > bollinger_init_data['LowerBand'] or (rsi - verify_rsi) > rsi_init_data:
                         logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty}  - rsi {rsi} - verify_rsi {verify_rsi} - rsi_init_data {rsi_init_data} ")
                         crear_orden(symbol, side, order_type, qty)
                         # Iniciar el monitoreo de la operación

@@ -287,12 +287,6 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
                 datam = obtener_datos_historicos(symbol, timeframe)
                 bollinger = calcular_bandas_bollinger(datam)
                 rsi = calcular_rsi_talib(datam[4])
-                bb_width = bollinger['BB_Width_%']
-
-                logger(f"analizar_posible_orden en {symbol} - bb_width {bb_width}")
-                if bb_width < Bollinger_bands_width:
-                    time.sleep(10)
-                    continue;
 
                 if side == "Sell": # bollineger y RSI altos
                     rsi_limit = float(rsi) + float(verify_rsi)

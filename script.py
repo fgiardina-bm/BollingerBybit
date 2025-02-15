@@ -124,6 +124,11 @@ def operar(simbolos):
                     log_message = f"{symbol:<15} Price: {precio:<12.5f}\tp24h: {price24hPcnt:<3.2f}\tFF: {fundingRate:<3.5f}\t{str(precio >= data['UpperBand']):<5}\t{str(precio <= data['LowerBand']):<5}\tBB_W: {data['BB_Width_%']:<5.0f}\tRSI: {rsi:<3.0f}\tcci: {cci:<5.0f}\tt1:{tendencia:<5}\tt2:{tendencia2:<5}"
                     logger(log_message)
 
+                    bb_width = data['BB_Width_%']
+                    if bb_width < Bollinger_bands_width:
+                        time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                        continue;
+                        
                     if precio > data['UpperBand'] and rsi > top_rsi:
                         # Datos de la moneda precio y pasos.
                         step = client.get_instruments_info(category="linear", symbol=symbol)
@@ -132,6 +137,7 @@ def operar(simbolos):
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
                         if usdt < 10:
+                            time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                             continue
 
                         precision = precision_step

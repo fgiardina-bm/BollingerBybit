@@ -281,7 +281,7 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
     rsi = rsi_init_data
     while True:
         try:
-            logger(f"analizar_posible_orden en {symbol} - {side} - {order_type} - {qty} - {bollinger_init_data['UpperBand']} -  {bollinger_init_data['LowerBand']} -  {bollinger_init_data['MA']} -  {bollinger_init_data['BB_Width_%']} - {rsi_init_data} - {(rsi - verify_rsi)} - {(rsi + verify_rsi)}")
+            logger(f"analizar_posible_orden en {symbol} - {side} - {order_type} - {qty} - {bollinger_init_data['UpperBand']} -  {bollinger_init_data['LowerBand']} -  {bollinger_init_data['MA']} -  {bollinger_init_data['BB_Width_%']} - RSI INICIAL: {rsi_init_data} - RSI ACTUAL{(rsi)}")
             if not verificar_posicion_abierta(symbol):
                 logger(f"analizar_posible_orden en {symbol} - No hay posiciones abiertas en {symbol}")
                 datam = obtener_datos_historicos(symbol, timeframe)

@@ -328,7 +328,7 @@ def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):
             posiciones = client.get_positions(category="linear", symbol=symbol)
             if float(posiciones['result']['list'][0]['size']) != 0:
                 precio_actual = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
-                logger(f"monitorear_operaciones_abiertas {symbol} - Precio actual de {symbol}: {precio_actual} - Precio de entrada: {pe}")
+                logger(f"monitorear_operaciones_abiertas {symbol} - Precio actual de {symbol}: {precio_actual} - Precio de entrada: {precio_entrada}")
                 if side == 'Buy':
                     # if precio_actual > pe and (precio_actual - precio_entrada) / precio_entrada >= (sl_callback_percentage / 100):
                     if precio_actual > pe:

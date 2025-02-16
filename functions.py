@@ -302,10 +302,13 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
                         inicial_bb = bollinger_init_data['LowerBand']
                         logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty} - rsi {rsi} - rsi_limit {rsi_limit} - rsi_init_data {rsi_init_data} - actual_bb {actual_bb} - inicial_bb {inicial_bb}")
                         crear_orden(symbol, side, order_type, qty)
-                        # Iniciar el monitoreo de la operación
-                        precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
-                        hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, side, qty))
-                        hilo_monitoreo.start()
+
+                        if monitoring == 1:
+                            # Iniciar el monitoreo de la operación
+                            precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
+                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, side, qty))
+                            hilo_monitoreo.start()
+
                         break
                     else:
                         logger(f"analizar_posible_orden en {symbol} - SELL RSI en {symbol} es mayor a {rsi_init_data} - Actual UB: {bollinger['UpperBand']} - Inicial UB: {bollinger_init_data['UpperBand']}")
@@ -317,10 +320,12 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
                         inicial_bb = bollinger_init_data['LowerBand']
                         logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty}  - rsi {rsi} - verify_rsi {verify_rsi} - rsi_init_data {rsi_init_data} - actual_bb {actual_bb} - inicial_bb {inicial_bb}")
                         crear_orden(symbol, side, order_type, qty)
-                        # Iniciar el monitoreo de la operación
-                        precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
-                        hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, side, qty))
-                        hilo_monitoreo.start()
+                        if monitoring == 1:
+                            # Iniciar el monitoreo de la operación
+                            precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
+                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, side, qty))
+                            hilo_monitoreo.start()
+                            
                         break
                     else:
                        logger(f"analizar_posible_orden en {symbol} - BUY RSI en {symbol} es menor a {rsi_init_data} - Actual LB: {bollinger['LowerBand']} - Inicial LB: {bollinger_init_data['LowerBand']}")

@@ -56,7 +56,6 @@ def operar(simbolos):
                             stop_loss_price = precio_de_entrada * (1 - sl_porcent / 100)
                             take_profit_price = precio_de_entrada * (1 + tp_porcent / 100)
                             result_sl = establecer_stop_loss(symbol, stop_loss_price)
-                            # result_tp = establecer_trailing_stop(symbol, take_profit_price, "Sell", float(posiciones['result']['list'][0]['size']), callback_ratio=1)
                             result_tp = establecer_take_profit(symbol,take_profit_price, "Sell")
                             if result_sl:
                                 logger(f"{symbol} Stop loss activado")
@@ -65,7 +64,6 @@ def operar(simbolos):
                             stop_loss_price = precio_de_entrada * (1 + sl_porcent / 100)
                             take_profit_price = precio_de_entrada * (1 - tp_porcent / 100)
                             result_sl = establecer_stop_loss(symbol, stop_loss_price)
-                            # result_tp = establecer_trailing_stop(symbol, take_profit_price, "Buy", float(posiciones['result']['list'][0]['size']), callback_ratio=1)
                             result_tp = establecer_take_profit(symbol, take_profit_price, "Buy")
                             if result_sl:
                                 logger(f"{symbol} Stop loss activado")
@@ -100,7 +98,6 @@ def operar(simbolos):
                     ticker = client.get_tickers(category='linear', symbol=symbol)
                     precio = float(ticker['result']['list'][0]['lastPrice'])
                     price24hPcnt = float(ticker['result']['list'][0]['price24hPcnt']) * 100
-                    openInterest = float(ticker['result']['list'][0]['openInterest'])
                     fundingRate = float(ticker['result']['list'][0]['fundingRate'])
 
 

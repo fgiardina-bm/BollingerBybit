@@ -22,6 +22,7 @@ sleep_rand_to = int(os.getenv("SLEEP_RAND_TO", 20))
 sl_callback_percentage = int(os.getenv("SL_CALLBACK_PERCENTAGE", 1))
 verify_rsi = int(os.getenv("VERIFY_RSI", 5))
 Bollinger_bands_width = int(os.getenv("BB_WIDTH", 5))
+monitoring = int(os.getenv("MONITORING", 0))
 
 def reload_config():
   
@@ -39,6 +40,7 @@ def reload_config():
     global sl_callback_percentage
     global verify_rsi
     global Bollinger_bands_width
+    global monitoring
 
     config_path = '.env'
 
@@ -65,3 +67,4 @@ def reload_config():
     sl_callback_percentage = int(os.getenv("SL_CALLBACK_PERCENTAGE", 1))
     verify_rsi = int(os.getenv("VERIFY_RSI", 5))
     Bollinger_bands_width = int(os.getenv("BB_WIDTH", 5))
+    monitoring = int(os.getenv("MONITORING", 0))

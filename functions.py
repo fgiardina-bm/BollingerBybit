@@ -4,6 +4,7 @@ import pandas as pd
 from dotenv import load_dotenv
 import time
 import math
+import random
 from decimal import Decimal, ROUND_DOWN, ROUND_FLOOR
 from concurrent.futures import ThreadPoolExecutor
 from config import *
@@ -288,6 +289,12 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
                 bollinger = calcular_bandas_bollinger(datam)
                 rsi = calcular_rsi_talib(datam[4])
 
+                bb_width = bollinger['BB_Width_%']
+                if bb_width < Bollinger_bands_width:
+                    logger(f"analizar_posible_orden en {symbol} - bb_width {bb_width} - Bollinger_bands_width {Bollinger_bands_width}")
+                    time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                    continue;
+                    
                 if side == "Sell": # bollineger y RSI altos
                     rsi_limit = float(rsi) + float(verify_rsi)
                     if (bollinger['UpperBand'] < bollinger_init_data['UpperBand']) or (rsi_limit < rsi_init_data):

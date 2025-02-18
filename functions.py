@@ -111,12 +111,10 @@ def verificar_posicion_abierta(symbol):
                     stop_loss = posicion.get('stopLoss')
                     take_profit = posicion.get('takeProfit')
                     if stop_loss and take_profit:
-                        # print(f"Posición abierta en {symbol} con Stop Loss: {stop_loss} y Take Profit: {take_profit}")
                         return True
                     else:
-                        # print(f"Posición abierta en {symbol} sin Stop Loss o Take Profit configurados")
                         return False
-            # print(f"No hay posiciones abiertas en {symbol}")
+
             return False
         else:
             logger("Error en la API:"+ posiciones["retMsg"])
@@ -169,21 +167,46 @@ def qty_step(price, symbol):
     return result
 
 def crear_orden(symbol, side, order_type, qty):
+    try:
+        response = client.place_order(
+            category="linear",
+            symbol=symbol,
+            side=side,
+            orderType=order_type,
+            qty=qty,
+            timeInForce="GoodTillCancel"
+        )
+        logger("Orden creada con exito:" + str(response))
 
-    # # Establecer el modo de margen y el apalancamiento antes de crear la orden
-    # if not establecer_modo_margen_y_apalancamiento(symbol, leverage=10):
-    #     print(f"No se pudo establecer el modo de margen y apalancamiento para {symbol}. Orden no creada.")
-    #     return
+        time.sleep(1)
+        establecer_st_tp(symbol)
 
-    response = client.place_order(
-        category="linear",
-        symbol=symbol,
-        side=side,
-        orderType=order_type,
-        qty=qty,
-        timeInForce="GoodTillCancel"
-    )
-    logger("Orden creada con exito:" + str(response))
+    except Exception as e:
+        logger(f"Error al crear la orden: {e}")
+
+def establecer_st_tp(symbol):
+    try:
+        posiciones = client.get_positions(category="linear", symbol=symbol)
+        if float(posiciones['result']['list'][0]['size']) != 0:
+            if not verificar_posicion_abierta(symbol):
+                precio_de_entrada = float(posiciones['result']['list'][0]['avgPrice'])
+                if posiciones['result']['list'][0]['side']  == 'Buy':
+                    stop_loss_price = precio_de_entrada * (1 - sl_porcent / 100)
+                    take_profit_price = precio_de_entrada * (1 + tp_porcent / 100)
+                    result_sl = establecer_stop_loss(symbol, stop_loss_price)
+                    result_tp = establecer_take_profit(symbol,take_profit_price, "Sell")
+                    if result_sl and result_tp:
+                        logger(f"{symbol} Stop loss y take profit activados")
+                    
+                else:
+                    stop_loss_price = precio_de_entrada * (1 + sl_porcent / 100)
+                    take_profit_price = precio_de_entrada * (1 - tp_porcent / 100)
+                    result_sl = establecer_stop_loss(symbol, stop_loss_price)
+                    result_tp = establecer_take_profit(symbol, take_profit_price, "Buy")
+                    if result_sl and result_tp:
+                        logger(f"{symbol} Stop loss y take profit activados")
+    except Exception as e:
+        logger(f"{symbol} Error al establecer stop loss y take profit: {e}")                   
 
 def establecer_stop_loss(symbol, sl):
 

@@ -57,16 +57,16 @@ def operar(simbolos):
                             take_profit_price = precio_de_entrada * (1 + tp_porcent / 100)
                             result_sl = establecer_stop_loss(symbol, stop_loss_price)
                             result_tp = establecer_take_profit(symbol,take_profit_price, "Sell")
-                            if result_sl:
-                                logger(f"{symbol} Stop loss activado")
+                            if result_sl and result_tp:
+                                logger(f"{symbol} Stop loss y take profit activados")
                             
                         else:
                             stop_loss_price = precio_de_entrada * (1 + sl_porcent / 100)
                             take_profit_price = precio_de_entrada * (1 - tp_porcent / 100)
                             result_sl = establecer_stop_loss(symbol, stop_loss_price)
                             result_tp = establecer_take_profit(symbol, take_profit_price, "Buy")
-                            if result_sl:
-                                logger(f"{symbol} Stop loss activado")
+                            if result_sl and result_tp:
+                                logger(f"{symbol} Stop loss y take profit activados")
                                 
                     else:
                         time.sleep(60)

@@ -21,7 +21,6 @@ COPY ./script.py ./
 COPY ./functions.py ./
 COPY ./config.py ./
 COPY ./indicators.py ./
-COPY ./test_soportes_resistencias.py ./
 
 RUN pip install --no-cache-dir -r requirements.txt
 

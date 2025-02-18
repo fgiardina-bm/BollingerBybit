@@ -110,7 +110,7 @@ def verificar_posicion_abierta(symbol):
                 if float(posicion['size']) > 0:
                     stop_loss = posicion.get('stopLoss')
                     take_profit = posicion.get('takeProfit')
-                    if stop_loss:
+                    if stop_loss and take_profit:
                         # print(f"Posición abierta en {symbol} con Stop Loss: {stop_loss} y Take Profit: {take_profit}")
                         return True
                     else:
@@ -198,9 +198,10 @@ def establecer_stop_loss(symbol, sl):
             positionIdx=0
         )
   
+        logger(f"{symbol} Stop loss establecido en {sl}")
         return order
     except Exception as e:
-        logger(f"Error al establecer el stop loss para {symbol}: {e}")
+        logger(f"{symbol} Error al establecer el stop loss: {e}")
         return None
 
 def establecer_take_profit(symbol, tp, side):
@@ -227,10 +228,10 @@ def establecer_take_profit(symbol, tp, side):
             positionIdx=0
         )
 
-        logger(f"Take profit establecido para {symbol} a {price}")
+        logger(f"{symbol} Take profit establecido a {price}")
         return order
     except Exception as e:
-        logger(f"Error al establecer el take profit para {symbol}: {e}")
+        logger(f"{symbol} Error al establecer el take profit: {e}")
         return None
 
 def establecer_trailing_stop(symbol, tp, side, qty, callback_ratio=1):
@@ -280,6 +281,8 @@ def check_opened_positions(opened_positions):
 def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, rsi_init_data):
 
     rsi = rsi_init_data
+    max_min_rsi = rsi_init_data
+
     while True:
         try:
             logger(f"analizar_posible_orden en {symbol} - {side} - {order_type} - {qty} - {bollinger_init_data['UpperBand']} -  {bollinger_init_data['LowerBand']} -  {bollinger_init_data['MA']} -  {bollinger_init_data['BB_Width_%']} - RSI INICIAL: {rsi_init_data} - RSI ACTUAL{(rsi)}")
@@ -296,8 +299,11 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
                     continue;
                     
                 if side == "Sell": # bollineger y RSI altos
+                    if rsi > max_min_rsi:
+                        max_min_rsi = rsi
+
                     rsi_limit = float(rsi) + float(verify_rsi)
-                    if (bollinger['UpperBand'] < bollinger_init_data['UpperBand']) or (rsi_limit < rsi_init_data):
+                    if (bollinger['UpperBand'] < bollinger_init_data['UpperBand']) or (rsi_limit < max_min_rsi):
                         actual_bb = bollinger['LowerBand']
                         inicial_bb = bollinger_init_data['LowerBand']
                         logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty} - rsi {rsi} - rsi_limit {rsi_limit} - rsi_init_data {rsi_init_data} - actual_bb {actual_bb} - inicial_bb {inicial_bb}")
@@ -314,8 +320,12 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
                         logger(f"analizar_posible_orden en {symbol} - SELL RSI en {symbol} es mayor a {rsi_init_data} - Actual UB: {bollinger['UpperBand']} - Inicial UB: {bollinger_init_data['UpperBand']}")
 
                 else:
+
+                    if rsi < max_min_rsi:
+                        max_min_rsi = rsi
+
                     rsi_limit = float(rsi) - float(verify_rsi)
-                    if (bollinger['LowerBand'] > bollinger_init_data['LowerBand']) or (rsi_limit > rsi_init_data):
+                    if (bollinger['LowerBand'] > bollinger_init_data['LowerBand']) or (rsi_limit > max_min_rsi):
                         actual_bb = bollinger['LowerBand']
                         inicial_bb = bollinger_init_data['LowerBand']
                         logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty}  - rsi {rsi} - verify_rsi {verify_rsi} - rsi_init_data {rsi_init_data} - actual_bb {actual_bb} - inicial_bb {inicial_bb}")

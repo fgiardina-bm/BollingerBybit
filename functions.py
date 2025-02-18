@@ -340,7 +340,7 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
 
                         break
                     else:
-                        logger(f"analizar_posible_orden en {symbol} - SELL RSI en {symbol} es mayor a {rsi_init_data} - Actual UB: {bollinger['UpperBand']} - Inicial UB: {bollinger_init_data['UpperBand']}")
+                        logger(f"analizar_posible_orden en {symbol} - SELL RSI en {symbol} rsi_limit: {rsi_limit} es mayor a max_min_rsi: {max_min_rsi} - rsi_init_data: {rsi_init_data} - Actual UB: {bollinger['UpperBand']} - Inicial UB: {bollinger_init_data['UpperBand']}")
 
                 else:
 
@@ -361,7 +361,7 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
                             
                         break
                     else:
-                       logger(f"analizar_posible_orden en {symbol} - BUY RSI en {symbol} es menor a {rsi_init_data} - Actual LB: {bollinger['LowerBand']} - Inicial LB: {bollinger_init_data['LowerBand']}")
+                       logger(f"analizar_posible_orden en {symbol} - BUY RSI en {symbol} rsi_limit: {rsi_limit} es menor a max_min_rsi: {max_min_rsi} - rsi_init_data: {rsi_init_data} - Actual LB: {bollinger['LowerBand']} - Inicial LB: {bollinger_init_data['LowerBand']}")
 
             else:
                 logger(f"analizar_posible_orden en {symbol} - Ya hay una posición abierta en {symbol}")
@@ -406,5 +406,11 @@ def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):
 
 def logger(log_message,aditional_text=""):
     log_path = f"logs/log-{timeframe}-{time.strftime('%Y%m%d')}.txt"
+    with open(log_path, "a") as log_file:
+        log_file.write(timeframe + '|' + time.strftime('%Y-%m-%d %H:%M:%S') + " " + log_message + " " + aditional_text + "\n")
+
+
+def t_logger(log_message,aditional_text=""):
+    log_path = f"logs/t_log-{timeframe}-{time.strftime('%Y%m%d')}.txt"
     with open(log_path, "a") as log_file:
         log_file.write(timeframe + '|' + time.strftime('%Y-%m-%d %H:%M:%S') + " " + log_message + " " + aditional_text + "\n")

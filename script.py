@@ -121,7 +121,7 @@ def operar(simbolos):
                     
                     log_message = f"{symbol:<15} Price: {precio:<12.5f}\tp24h: {price24hPcnt:<3.2f}\tFF: {fundingRate:<3.5f}\t{str(precio >= data['UpperBand']):<5}\t{str(precio <= data['LowerBand']):<5}\tBB_W: {data['BB_Width_%']:<5.0f}\tRSI: {rsi:<3.0f}\tcci: {cci:<5.0f}\tt1:{tendencia:<5}\tt2:{tendencia2:<5}"
                     logger(log_message)
-                    t_log_message = f"{symbol};{price24hPcnt};{fundingRate};{data['UpperBand']};{data['UpperBand']};{precio >= data['UpperBand']};{precio <= data['LowerBand']};{data['BB_Width_%']};{openInterest};{rsi};{cci};{tendencia};{tendencia2}"
+                    t_log_message = f"{symbol};{precio:.5f};{price24hPcnt:.2f};{fundingRate:.4f};{data['UpperBand']:.5f};{data['UpperBand']:.5f};{precio >= data['UpperBand']};{precio <= data['LowerBand']};{data['BB_Width_%']:.2f};{openInterest:.0f};{rsi:.2f};{cci:.0f};{tendencia};{tendencia2}"
                     t_logger(t_log_message)
 
                     bb_width = data['BB_Width_%']

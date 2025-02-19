@@ -413,4 +413,4 @@ def logger(log_message,aditional_text=""):
 def t_logger(log_message,aditional_text=""):
     log_path = f"logs/t_log-{timeframe}-{time.strftime('%Y%m%d')}.csv"
     with open(log_path, "a") as log_file:
-        log_file.write(timeframe + ";" + time.strftime('%Y-%m-%d %H:%M:%S') + ";" + log_message + aditional_text + "\n")
+        log_file.write(timeframe + ";" + time.strftime('%Y-%m-%d %H:%M:%S') + ";" + log_message.replace('.', ',') + aditional_text + "\n")

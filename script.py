@@ -77,7 +77,7 @@ def operar(simbolos):
                         opened_positions.remove(symbol)
 
 
-                    if len(opened_positions) >= 4:
+                    if len(opened_positions) >= max_ops:
                         logger("Se alcanzó el límite de posiciones abiertas.")
                         time.sleep(60)
                         continue

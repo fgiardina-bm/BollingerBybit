@@ -49,7 +49,7 @@ def operar(simbolos):
 
                     logger("Hay una posicion abierta en " + symbol)
                     if not verificar_posicion_abierta(symbol):
-                        logger(f"{symbol}: verifico posicion abierta {verificar_posicion_abierta_details(symbol)}")
+                        logger(f"{symbol}: verifico posicion abierta con detalles: {verificar_posicion_abierta_details(symbol)}")
 
                         precio_de_entrada = float(posiciones['result']['list'][0]['avgPrice'])
                         if posiciones['result']['list'][0]['side']  == 'Buy':
@@ -69,6 +69,7 @@ def operar(simbolos):
                                 logger(f"{symbol} Stop loss y take profit activados")
                                 
                     else:
+                        logger("Hay una posicion abierta en " + symbol + 'espero 60 segundos')
                         time.sleep(60)
                 else:
 
@@ -170,7 +171,7 @@ def operar(simbolos):
                         analizar_posible_orden(symbol, "Buy", "Market", qty, data, rsi)
 
             except Exception as e:
-                logger(f"Error en el bot: {e}")
+                logger(f"Error en el bot {symbol}: {e}")
                 time.sleep(60)
 
          time.sleep(random.randint(sleep_rand_from, sleep_rand_to))

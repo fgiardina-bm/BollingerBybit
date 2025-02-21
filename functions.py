@@ -103,25 +103,30 @@ def obtener_saldo_usdt():
         return 0.0
 
 def verificar_posicion_abierta(symbol):
-    try:
-        posiciones = client.get_positions(category="linear", symbol=symbol)
-        if posiciones["retCode"] == 0:
-            for posicion in posiciones['result']['list']:
-                if float(posicion['size']) > 0:
-                    stop_loss = posicion.get('stopLoss')
-                    take_profit = posicion.get('takeProfit')
-                    if stop_loss and take_profit:
-                        return True
-                    else:
-                        return False
+    retries = 3
+    while retries > 0:
+        try:
+            posiciones = client.get_positions(category="linear", symbol=symbol)
+            if posiciones["retCode"] == 0:
+                for posicion in posiciones['result']['list']:
+                    if float(posicion['size']) > 0:
+                        stop_loss = posicion.get('stopLoss')
+                        take_profit = posicion.get('takeProfit')
+                        if stop_loss and take_profit:
+                            return True
+                        else:
+                            return False
 
-            return False
-        else:
-            logger("Error en la API:"+ posiciones["retMsg"])
-            return False
-    except Exception as e:
-        logger(f"Error al verificar la posición abierta en {symbol}: {e}")
-        return False
+                return False
+            else:
+                logger("Error en la API:"+ posiciones["retMsg"])
+                return False
+        except Exception as e:
+            logger(f"Error al verificar la posición abierta en {symbol}: {e}")
+            retries -= 1
+            if retries == 0:
+                return False
+            time.sleep(1)
 
 def verificar_posicion_abierta_details(symbol):
     try:

@@ -69,7 +69,7 @@ def operar(simbolos):
                                 logger(f"{symbol} Stop loss y take profit activados")
                                 
                     else:
-                        logger("Hay una posicion abierta en " + symbol + 'espero 60 segundos')
+                        logger("Hay una posicion abierta en " + symbol + ' espero 60 segundos')
                         time.sleep(60)
                 else:
 
@@ -78,7 +78,7 @@ def operar(simbolos):
 
 
                     if len(opened_positions) >= max_ops:
-                        logger("Se alcanzó el límite de posiciones abiertas.")
+                        logger(f"Se alcanzó el límite de posiciones abiertas | {max_ops}.")
                         time.sleep(60)
                         continue
 

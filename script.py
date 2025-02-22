@@ -69,7 +69,7 @@ def operar(simbolos):
                                 logger(f"{symbol} Stop loss y take profit activados")
                                 
                     else:
-                        logger("Hay una posicion abierta en " + symbol + ' espero 60 segundos')
+                        logger(f"Hay una posicion abierta en {symbol} espero 60 segundos")
                         time.sleep(60)
                 else:
 

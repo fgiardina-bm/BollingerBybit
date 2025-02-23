@@ -22,10 +22,6 @@ def calcular_ema(data, ventana=20):
         print(f"Error al calcular la EMA: {e}")
         return None
 
-def calcular_macd(closes, fastperiod=12, slowperiod=26, signalperiod=9):
-    macd, macdsignal, macdhist = talib.MACD(np.array(closes), fastperiod=fastperiod, slowperiod=slowperiod, signalperiod=signalperiod)
-    return macd[-1], macdsignal[-1], macdhist[-1]
-
 def calcular_atr(highs, lows, closes, timeperiod=14):
     atr = talib.ATR(np.array(highs), np.array(lows), np.array(closes), timeperiod=timeperiod)
     return atr[-1]
@@ -67,14 +63,14 @@ def detectar_tendencia_bb_cci(high_prices, low_prices, close_prices):
 
     # Señal de compra (alcista)
     if close < lower_band and cci_value < -100:
-        return "Alcista"
+        return "A"
 
     # Señal de venta (bajista)
     if close > upper_band and cci_value > 100:
-        return "Bajista"
+        return "B"
 
     # No hay señal clara
-    return 0
+    return ""
 
 def calcular_cci(high_prices, low_prices, close_prices):
 
@@ -119,13 +115,13 @@ def detectar_cambio_tendencia(open_prices, high_prices, low_prices, close_prices
     # Última vela (índice -1)
     if patron_alcista[-1] > 0:  # Si hay patrón alcista
         if rsi[-1] < 30 or (macd[-1] > macd_signal[-1] and macd[-2] < macd_signal[-2]):
-            return "Alcista"
+            return "A"
 
     if patron_bajista[-1] < 0:  # Si hay patrón bajista
         if rsi[-1] > 70 or (macd[-1] < macd_signal[-1] and macd[-2] > macd_signal[-2]):
-            return "Bajista"
+            return "B"
 
-    return 0  # No hay señal clara
+    return ""  # No hay señal clara
 
 def detectar_soportes_resistencias(high_prices, low_prices, period=50):
     """
@@ -156,3 +152,7 @@ def soporte_resistencias(precios, bins=20):
     niveles = (bin_edges[:-1] + bin_edges[1:]) / 2  # Centros de los bins
     niveles_importantes = niveles[hist > np.percentile(hist, 75)]  # Filtra los más significativos
     return niveles_importantes
+
+def calcular_macd(closes, fastperiod=12, slowperiod=26, signalperiod=9):
+    macd, macdsignal, macdhist = talib.MACD(np.array(closes), fastperiod=fastperiod, slowperiod=slowperiod, signalperiod=signalperiod)
+    return macd[-1], macdsignal[-1], macdhist[-1], macd[-2], macdsignal[-2], macdhist[-2]

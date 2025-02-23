@@ -101,7 +101,7 @@ def operar(simbolos):
                     price24hPcnt = float(ticker['result']['list'][0]['price24hPcnt']) * 100
                     openInterest = float(ticker['result']['list'][0]['openInterest'])
                     fundingRate = float(ticker['result']['list'][0]['fundingRate'])
-
+                    macd1, macdsignal1, macdhist1, macd2, macdsignal2, macdhist2= calcular_macd(close_prices)
 
                     cci = calcular_cci(high_prices, low_prices, close_prices)
 
@@ -120,11 +120,11 @@ def operar(simbolos):
                     tendencia = detectar_cambio_tendencia(open_prices, high_prices, low_prices, close_prices)
                     tendencia2 = detectar_tendencia_bb_cci(high_prices, low_prices, close_prices)
                     
-                    log_message = f"{symbol:<15} Price: {precio:<12.5f}\tp24h: {price24hPcnt:<3.2f}\tFF: {fundingRate:<3.5f}\t{str(precio >= data['UpperBand']):<5}\t{str(precio <= data['LowerBand']):<5}\tBB_W: {data['BB_Width_%']:<5.0f}\tRSI: {rsi:<3.0f}\tcci: {cci:<5.0f}\tt1:{tendencia:<5}\tt2:{tendencia2:<5}"
+                    log_message = f"{symbol:<15} Price: {precio:<12.5f}\tp24h: {price24hPcnt:<3.2f}\t{str(precio >= data['UpperBand']):<5}\t{str(precio <= data['LowerBand']):<5}\tBB_W: {data['BB_Width_%']:<5.0f}\tRSI: {rsi:<3.0f}\tt1:{tendencia:<5}\tt2:{tendencia2:<5};{macdhist1:.5f};{macd2:.5f};{macdsignal2:.5f};{macdhist2:.5f}"
                     logger(log_message)
                     
-                    #timeframe;date;symbol;price;price24hPcnt;fundingRate;UpperBand;LowerBand;UpperBandCross;LowerBandCross;BB_Width_%;openInterest;rsi;cci;tendencia;tendencia2
-                    t_log_message = f"{symbol};{precio:.5f};{price24hPcnt:.2f};{fundingRate:.4f};{data['UpperBand']:.5f};{data['LowerBand']:.5f};{precio >= data['UpperBand']};{precio <= data['LowerBand']};{data['BB_Width_%']:.2f};{openInterest:.0f};{rsi:.2f};{cci:.0f};{tendencia};{tendencia2}"
+                    #timeframe;date;symbol;price;price24hPcnt;fundingRate;UpperBand;LowerBand;UpperBandCross;LowerBandCross;BB_Width_%;openInterest;rsi;cci;tendencia;tendencia2,macd1, macdsignal1, macdhist1, macd2, macdsignal2, macdhist2
+                    t_log_message = f"{symbol};{precio:.5f};{price24hPcnt:.2f};{fundingRate:.4f};{data['UpperBand']:.5f};{data['LowerBand']:.5f};{precio >= data['UpperBand']};{precio <= data['LowerBand']};{data['BB_Width_%']:.2f};{openInterest:.0f};{rsi:.2f};{cci:.0f};{tendencia};{tendencia2};{macd1:.5f};{macdsignal1:.5f};{macdhist1:.5f};{macd2:.5f};{macdsignal2:.5f};{macdhist2:.5f}"
                     t_logger(t_log_message)
 
                     bb_width = data['BB_Width_%']

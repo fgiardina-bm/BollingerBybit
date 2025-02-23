@@ -120,7 +120,7 @@ def operar(simbolos):
                     tendencia = detectar_cambio_tendencia(open_prices, high_prices, low_prices, close_prices)
                     tendencia2 = detectar_tendencia_bb_cci(high_prices, low_prices, close_prices)
                     
-                    log_message = f"{symbol:<15} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<3.2f}\t{str(precio >= data['UpperBand']):<5}\t{str(precio <= data['LowerBand']):<5}\tBB_W: {data['BB_Width_%']:<3.0f}\tRSI: {rsi:<3.0f}\tt1:{tendencia:<2}\tt2:{tendencia2:<2}"
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<3.2f}\t{str(precio >= data['UpperBand']):<5}\t{str(precio <= data['LowerBand']):<5}\tBB_W: {data['BB_Width_%']:<3.0f}\tRSI: {rsi:<3.0f}\tt1:{tendencia:<2}\tt2:{tendencia2:<2}"
                     logger(log_message)
                     
                     #timeframe;date;symbol;price;price24hPcnt;fundingRate;UpperBand;LowerBand;UpperBandCross;LowerBandCross;BB_Width_%;openInterest;rsi;cci;tendencia;tendencia2,macd1, macdsignal1, macdhist1, macd2, macdsignal2, macdhist2

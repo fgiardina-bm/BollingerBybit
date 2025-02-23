@@ -159,10 +159,11 @@ def calcular_macd(closes, fastperiod=12, slowperiod=26, signalperiod=9):
 
 def patron_velas_alcistas(open_prices, high_prices, low_prices, close_prices):
     
-    # Detectar patrones de velas
     patron_alcista = talib.CDLENGULFING(open_prices, high_prices, low_prices, close_prices) \
                      + talib.CDLHAMMER(open_prices, high_prices, low_prices, close_prices) \
-                     + talib.CDLPIERCING(open_prices, high_prices, low_prices, close_prices)
+                     + talib.CDLPIERCING(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDLMORNINGSTAR(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDL3WHITESOLDIERS(open_prices, high_prices, low_prices, close_prices)
 
     return patron_alcista[-1] > 0
 
@@ -171,6 +172,8 @@ def patron_velas_bajistas(open_prices, high_prices, low_prices, close_prices):
 
     patron_bajista = talib.CDLENGULFING(open_prices, high_prices, low_prices, close_prices) \
                      + talib.CDLSHOOTINGSTAR(open_prices, high_prices, low_prices, close_prices) \
-                     + talib.CDLDARKCLOUDCOVER(open_prices, high_prices, low_prices, close_prices)
+                     + talib.CDLDARKCLOUDCOVER(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDLEVENINGSTAR(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDL3BLACKCROWS(open_prices, high_prices, low_prices, close_prices)
 
     return patron_bajista[-1] < 0

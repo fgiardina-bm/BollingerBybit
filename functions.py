@@ -434,7 +434,7 @@ def analizar_posible_orden_patron_velas(symbol, side, order_type, qty, bollinger
             logger(f"analizar_posible_orden en {symbol} - Error al analizar posible orden en {symbol}: {e}")
             break
 
-        time.sleep(14)
+        time.sleep(random.randint(int(sleep_rand_from/4), int(sleep_rand_to/4)))
 
 
 def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):

@@ -106,19 +106,17 @@ def detectar_cambio_tendencia(open_prices, high_prices, low_prices, close_prices
                      + talib.CDLSHOOTINGSTAR(open_prices, high_prices, low_prices, close_prices) \
                      + talib.CDLDARKCLOUDCOVER(open_prices, high_prices, low_prices, close_prices)
 
-    # Calcular RSI
-    rsi = talib.RSI(close_prices, timeperiod=14)
 
     # Calcular MACD
     macd, macd_signal, _ = talib.MACD(close_prices, fastperiod=12, slowperiod=26, signalperiod=9)
 
     # Última vela (índice -1)
     if patron_alcista[-1] > 0:  # Si hay patrón alcista
-        if rsi[-1] < 30 or (macd[-1] > macd_signal[-1] and macd[-2] < macd_signal[-2]):
+        if (macd[-1] > macd_signal[-1] and macd[-2] < macd_signal[-2]):
             return "A"
 
     if patron_bajista[-1] < 0:  # Si hay patrón bajista
-        if rsi[-1] > 70 or (macd[-1] < macd_signal[-1] and macd[-2] > macd_signal[-2]):
+        if (macd[-1] < macd_signal[-1] and macd[-2] > macd_signal[-2]):
             return "B"
 
     return ""  # No hay señal clara
@@ -156,3 +154,23 @@ def soporte_resistencias(precios, bins=20):
 def calcular_macd(closes, fastperiod=12, slowperiod=26, signalperiod=9):
     macd, macdsignal, macdhist = talib.MACD(np.array(closes), fastperiod=fastperiod, slowperiod=slowperiod, signalperiod=signalperiod)
     return macd[-1], macdsignal[-1], macdhist[-1], macd[-2], macdsignal[-2], macdhist[-2]
+
+
+
+def patron_velas_alcistas(open_prices, high_prices, low_prices, close_prices):
+    
+    # Detectar patrones de velas
+    patron_alcista = talib.CDLENGULFING(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDLHAMMER(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDLPIERCING(open_prices, high_prices, low_prices, close_prices)
+                     
+    return patron_alcista[-1] > 0
+
+
+def patron_velas_bajistas(open_prices, high_prices, low_prices, close_prices):
+
+    patron_bajista = talib.CDLENGULFING(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDLSHOOTINGSTAR(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDLDARKCLOUDCOVER(open_prices, high_prices, low_prices, close_prices)
+
+    return patron_bajista[-1] > 0

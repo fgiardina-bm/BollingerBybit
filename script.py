@@ -120,7 +120,7 @@ def operar(simbolos):
                     tendencia = detectar_cambio_tendencia(open_prices, high_prices, low_prices, close_prices)
                     tendencia2 = detectar_tendencia_bb_cci(high_prices, low_prices, close_prices)
                     
-                    log_message = f"{symbol:<15} Price: {precio:<12.5f}\tp24h: {price24hPcnt:<3.2f}\t{str(precio >= data['UpperBand']):<5}\t{str(precio <= data['LowerBand']):<5}\tBB_W: {data['BB_Width_%']:<5.0f}\tRSI: {rsi:<3.0f}\tt1:{tendencia:<2}\tt2:{tendencia2:<2};{macd1:.5f};{macdsignal1:.5f};{macdhist1:.5f};{macd2:.5f};{macdsignal2:.5f};{macdhist2:.5f}"
+                    log_message = f"{symbol:<15} Price: {precio:<8.5f}\tp24h: {price24hPcnt:<3.2f}\t{str(precio >= data['UpperBand']):<5}\t{str(precio <= data['LowerBand']):<5}\tBB_W: {data['BB_Width_%']:.0f}\tRSI: {rsi:.0f}\tt1:{tendencia:<2}\tt2:{tendencia2:<2};{macd1:.5f};{macdsignal1:.5f};{macdhist1:.5f};{macd2:.5f};{macdsignal2:.5f};{macdhist2:.5f}"
                     logger(log_message)
                     
                     #timeframe;date;symbol;price;price24hPcnt;fundingRate;UpperBand;LowerBand;UpperBandCross;LowerBandCross;BB_Width_%;openInterest;rsi;cci;tendencia;tendencia2,macd1, macdsignal1, macdhist1, macd2, macdsignal2, macdhist2
@@ -149,7 +149,8 @@ def operar(simbolos):
                         if qty.is_integer():
                             qty = int(qty)
                         logger(f"{symbol} Cantidad de monedas a vender: " + str(qty))
-                        analizar_posible_orden(symbol, "Sell", "Market", qty, data, rsi)
+                        #analizar_posible_orden(symbol, "Sell", "Market", qty, data, rsi)
+                        analizar_posible_orden_patron_velas(symbol, "Sell", "Market", qty, data, rsi)
 
                     if precio < data['LowerBand'] and rsi < bottom_rsi:
                         # Datos de la moneda precio y pasos.
@@ -168,7 +169,8 @@ def operar(simbolos):
                         if qty.is_integer():
                             qty = int(qty)
                         logger(f"{symbol} Cantidad de monedas a comprar: " + str(qty))
-                        analizar_posible_orden(symbol, "Buy", "Market", qty, data, rsi)
+                        # analizar_posible_orden(symbol, "Buy", "Market", qty, data, rsi)
+                        analizar_posible_orden_patron_velas(symbol, "Buy", "Market", qty, data, rsi)
 
             except Exception as e:
                 logger(f"Error en el bot {symbol}: {e}")

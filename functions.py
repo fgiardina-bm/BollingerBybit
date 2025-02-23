@@ -377,6 +377,66 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
 
         time.sleep(20)
 
+def analizar_posible_orden_patron_velas(symbol, side, order_type, qty, bollinger_init_data, rsi_init_data):
+
+    rsi = rsi_init_data
+
+    while True:
+        try:
+            logger(f"analizar_posible_orden en {symbol} - {side} - {order_type} - {qty} - {bollinger_init_data['UpperBand']} -  {bollinger_init_data['LowerBand']} -  {bollinger_init_data['MA']} -  {bollinger_init_data['BB_Width_%']} - RSI INICIAL: {rsi_init_data} - RSI ACTUAL{(rsi)}")
+            if not verificar_posicion_abierta(symbol):
+                logger(f"analizar_posible_orden en {symbol} - No hay posiciones abiertas en {symbol}")
+                datam = obtener_datos_historicos(symbol, timeframe)
+                open_prices = np.array(datam[1])
+                high_prices = np.array(datam[2])
+                low_prices = np.array(datam[3])
+                close_prices = np.array(datam[4])
+
+                rsi = calcular_rsi_talib(datam[4])
+                momento_alcista = patron_velas_alcistas(open_prices, high_prices, low_prices, close_prices)
+                momento_bajista = patron_velas_bajistas(open_prices, high_prices, low_prices, close_prices)
+
+                if rsi > 40 and rsi < 60:
+                    logger(f"analizar_posible_orden en {symbol} - RSI en instancias medias {rsi} salgo del analisis.")
+                    break;
+                    
+                if side == "Sell":
+
+                    if momento_bajista:
+                        logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty} - rsi {rsi}")
+                        crear_orden(symbol, side, order_type, qty)
+
+                        if monitoring == 1:
+                            # Iniciar el monitoreo de la operación
+                            precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
+                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, side, qty))
+                            hilo_monitoreo.start()
+                    else:
+                        logger(f"analizar_posible_orden en {symbol} - No se detecta un patrón bajista en {symbol}")
+
+                else:
+
+                    if momento_alcista:
+                        logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty}  - rsi {rsi}")
+                        crear_orden(symbol, side, order_type, qty)
+                        if monitoring == 1:
+                            # Iniciar el monitoreo de la operación
+                            precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
+                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, side, qty))
+                            hilo_monitoreo.start()
+                    else:
+                        logger(f"analizar_posible_orden en {symbol} - No se detecta un patrón alcista en {symbol}") 
+
+            else:
+                logger(f"analizar_posible_orden en {symbol} - Ya hay una posición abierta en {symbol}")
+                break
+        except Exception as e:
+            logger(f"analizar_posible_orden en {symbol} - Error al analizar posible orden en {symbol}: {e}")
+            break
+
+        time.sleep(14)
+
+
 def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):
     pe = precio_entrada
     while True:

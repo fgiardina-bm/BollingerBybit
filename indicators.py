@@ -163,7 +163,7 @@ def patron_velas_alcistas(open_prices, high_prices, low_prices, close_prices):
     patron_alcista = talib.CDLENGULFING(open_prices, high_prices, low_prices, close_prices) \
                      + talib.CDLHAMMER(open_prices, high_prices, low_prices, close_prices) \
                      + talib.CDLPIERCING(open_prices, high_prices, low_prices, close_prices)
-                     
+
     return patron_alcista[-1] > 0
 
 
@@ -173,4 +173,4 @@ def patron_velas_bajistas(open_prices, high_prices, low_prices, close_prices):
                      + talib.CDLSHOOTINGSTAR(open_prices, high_prices, low_prices, close_prices) \
                      + talib.CDLDARKCLOUDCOVER(open_prices, high_prices, low_prices, close_prices)
 
-    return patron_bajista[-1] > 0
+    return patron_bajista[-1] < 0

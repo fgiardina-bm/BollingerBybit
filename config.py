@@ -45,11 +45,14 @@ max_ops = int(os.getenv(MAX_OPS, 1))
 
 config_lock = threading.Lock()
 
+opened_positions = [];
+
 def reload_config():
 
     global api_key, api_secret, timeframe, tp_porcent, sl_porcent, cnt_symbols
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
+    global opened_positions
     
     while True:
         with config_lock:

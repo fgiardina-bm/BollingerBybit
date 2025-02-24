@@ -378,11 +378,14 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
         time.sleep(20)
 
 def analizar_posible_orden_patron_velas(symbol, side, order_type, qty, bollinger_init_data, rsi_init_data):
-
     rsi = rsi_init_data
 
     while True:
         try:
+            if len(opened_positions) >= max_ops:
+                logger(f"analizar_posible_orden - Se alcanzó el límite de posiciones abiertas | {max_ops}.")
+                break
+            
             logger(f"analizar_posible_orden en {symbol} - {side} - {order_type} - {qty} - {bollinger_init_data['UpperBand']} -  {bollinger_init_data['LowerBand']} -  {bollinger_init_data['MA']} -  {bollinger_init_data['BB_Width_%']} - RSI INICIAL: {rsi_init_data} - RSI ACTUAL{(rsi)}")
             if not verificar_posicion_abierta(symbol):
                 logger(f"analizar_posible_orden en {symbol} - No hay posiciones abiertas en {symbol}")
@@ -398,7 +401,7 @@ def analizar_posible_orden_patron_velas(symbol, side, order_type, qty, bollinger
 
                 if rsi > 40 and rsi < 60:
                     logger(f"analizar_posible_orden en {symbol} - RSI en instancias medias {rsi} salgo del analisis.")
-                    break;
+                    break
                     
                 if side == "Sell":
 

@@ -25,7 +25,6 @@ try:
 except Exception as e:
     logger(str(e))
 
-opened_positions = [];
 def operar(simbolos):
     global opened_positions
     global saldo_usdt_inicial

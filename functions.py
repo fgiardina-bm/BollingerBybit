@@ -474,6 +474,32 @@ def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):
             logger(f"monitorear_operaciones_abiertas {symbol} Error al monitorear la operación en {symbol}: {e}")
             break
 
+def get_opened_positions(symbol):
+    global opened_positions_long, opened_positions_short
+
+    try:
+        posiciones = client.get_positions(category="linear", symbol=symbol)
+
+        if float(posiciones['result']['list'][0]['size']) == 0:
+            if symbol in opened_positions_long:
+                opened_positions_long.remove(symbol)
+            if symbol in opened_positions_short:
+                opened_positions_short.remove(symbol)
+                
+        if float(posiciones['result']['list'][0]['size']) != 0:
+            for posicion in posiciones['result']['list']:
+                if posicion['side'] == 'Buy' and posicion['symbol'] not in opened_positions_long:
+                    opened_positions_long.append(posicion['symbol'])
+                elif posicion['side'] == 'Sell' and posicion['symbol'] not in opened_positions_short:
+                    opened_positions_short.append(posicion['symbol'])
+
+
+
+
+    except Exception as e:
+        logger(f"get_opened_positions Error al obtener las posiciones abiertas: {e}")
+        print(f"Error al obtener las posiciones abiertas: {e}")
+
 
 def logger(log_message,aditional_text=""):
     log_path = f"logs/log-{timeframe}-{time.strftime('%Y%m%d')}.txt"

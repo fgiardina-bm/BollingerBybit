@@ -26,11 +26,13 @@ except Exception as e:
     logger(str(e))
 
 def operar(simbolos):
-    global opened_positions
+    global opened_positions, opened_positions_short, opened_positions_long
     global saldo_usdt_inicial
     global api_key, api_secret, timeframe, tp_porcent, sl_porcent, cnt_symbols
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
+    global opened_positions_long, opened_positions_short
+    global max_ops_long, max_ops_short
 
     with config_lock:
         logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
@@ -39,7 +41,7 @@ def operar(simbolos):
 
          for symbol in simbolos:
             try:
-
+                get_opened_positions(symbol=symbol)
                 posiciones = client.get_positions(category="linear", symbol=symbol)
                 if float(posiciones['result']['list'][0]['size']) != 0:
 
@@ -133,6 +135,12 @@ def operar(simbolos):
                         continue;
                         
                     if precio > data['UpperBand'] and rsi > top_rsi:
+
+                        if len(opened_positions_short) >= max_ops_short:
+                            logger(f"{symbol:<18} operaciones abiertas en short {len(opened_positions_short)} | maximo configurado es {max_ops_short}.")
+                            time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                            continue
+
                         # Datos de la moneda precio y pasos.
                         step = client.get_instruments_info(category="linear", symbol=symbol)
                         precision_step = float(step['result']['list'][0]["lotSizeFilter"]["qtyStep"])
@@ -153,6 +161,12 @@ def operar(simbolos):
                         analizar_posible_orden_patron_velas(symbol, "Sell", "Market", qty, data, rsi)
 
                     if precio < data['LowerBand'] and rsi < bottom_rsi:
+
+                        if len(opened_positions_long) >= max_ops_long:
+                            logger(f"{symbol:<18} operaciones abiertas en long {len(opened_positions_long)} | maximo configurado es {max_ops_long}.")
+                            time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                            continue
+                        
                         # Datos de la moneda precio y pasos.
                         step = client.get_instruments_info(category="linear", symbol=symbol)
                         precision_step = float(step['result']['list'][0]["lotSizeFilter"]["qtyStep"])
@@ -182,6 +196,8 @@ def operar(simbolos):
 reload_config_process = threading.Thread(target=reload_config)
 reload_config_process.start()
 
+load_opened_positions = threading.Thread(target=get_opened_positions)
+load_opened_positions.start()
 
 # Lista de otros símbolos a buscar
 otros_simbolos = obtener_simbolos_mayor_volumen(cnt_symbols)

@@ -378,6 +378,7 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
         time.sleep(20)
 
 def analizar_posible_orden_patron_velas(symbol, side, order_type, qty, bollinger_init_data, rsi_init_data):
+    global opened_positions
     rsi = rsi_init_data
 
     while True:

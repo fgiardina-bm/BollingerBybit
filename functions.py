@@ -485,7 +485,7 @@ def get_opened_positions(symbol):
                 opened_positions_long.remove(symbol)
             if symbol in opened_positions_short:
                 opened_positions_short.remove(symbol)
-                
+
         if float(posiciones['result']['list'][0]['size']) != 0:
             for posicion in posiciones['result']['list']:
                 if posicion['side'] == 'Buy' and posicion['symbol'] not in opened_positions_long:
@@ -493,6 +493,7 @@ def get_opened_positions(symbol):
                 elif posicion['side'] == 'Sell' and posicion['symbol'] not in opened_positions_short:
                     opened_positions_short.append(posicion['symbol'])
 
+        return posiciones
 
 
 

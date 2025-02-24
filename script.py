@@ -41,8 +41,7 @@ def operar(simbolos):
 
          for symbol in simbolos:
             try:
-                get_opened_positions(symbol=symbol)
-                posiciones = client.get_positions(category="linear", symbol=symbol)
+                posiciones = get_opened_positions(symbol=symbol)
                 if float(posiciones['result']['list'][0]['size']) != 0:
 
                     if symbol not in opened_positions:
@@ -166,7 +165,7 @@ def operar(simbolos):
                             logger(f"{symbol:<18} operaciones abiertas en long {len(opened_positions_long)} | maximo configurado es {max_ops_long}.")
                             time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                             continue
-                        
+
                         # Datos de la moneda precio y pasos.
                         step = client.get_instruments_info(category="linear", symbol=symbol)
                         precision_step = float(step['result']['list'][0]["lotSizeFilter"]["qtyStep"])
@@ -195,9 +194,6 @@ def operar(simbolos):
 
 reload_config_process = threading.Thread(target=reload_config)
 reload_config_process.start()
-
-load_opened_positions = threading.Thread(target=get_opened_positions)
-load_opened_positions.start()
 
 # Lista de otros símbolos a buscar
 otros_simbolos = obtener_simbolos_mayor_volumen(cnt_symbols)

@@ -179,6 +179,10 @@ def operar(simbolos):
          time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
 
 
+reload_config_process = threading.Thread(target=reload_config)
+reload_config_process.start()
+
+
 # Lista de otros símbolos a buscar
 otros_simbolos = obtener_simbolos_mayor_volumen(cnt_symbols)
 
@@ -189,8 +193,6 @@ for simbolo in otros_simbolos:
     hilo.start()
 
 
-# hilo_check_opened_positions = threading.Thread(target=check_opened_positions, args=(opened_positions,))
-# hilo_check_opened_positions.start()
 
 # # Crear una cola para gestionar las tareas
 # task_queue = queue.Queue()

@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 import time
+import threading
 
 # Definir constantes para las claves de las variables de entorno
 API_KEY = "API_KEY"
@@ -42,47 +43,50 @@ Bollinger_bands_width = int(os.getenv(BB_WIDTH, 5))
 monitoring = int(os.getenv(MONITORING, 0))
 max_ops = int(os.getenv(MAX_OPS, 1))
 
+config_lock = threading.Lock()
+
 def reload_config():
 
     global api_key, api_secret, timeframe, tp_porcent, sl_porcent, cnt_symbols
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
-
+    
     while True:
-        log_path = f"logs/log-{timeframe}-{time.strftime('%Y%m%d')}.txt"
-        with open(log_path, "a") as log_file:
-            log_file.write(str(timeframe) + '|' + time.strftime('%Y-%m-%d %H:%M:%S') + " reload_config\n")
+        with config_lock:
+            log_path = f"logs/log-{timeframe}-{time.strftime('%Y%m%d')}.txt"
+            with open(log_path, "a") as log_file:
+                log_file.write(str(timeframe) + '|' + time.strftime('%Y-%m-%d %H:%M:%S') + " reload_config\n")
 
-        config_path = '.env'
+            config_path = '.env'
 
-        if timeframe == 240:
-            config_path = '.env4'
+            if timeframe == 240:
+                config_path = '.env4'
 
-        load_dotenv(config_path, override=True)
+            load_dotenv(config_path, override=True)
 
-        try:
-            api_key = os.getenv(API_KEY)
-            api_secret = os.getenv(API_SECRET)
-            timeframe = int(os.getenv(TIMEFRAME, "5"))
+            try:
+                api_key = os.getenv(API_KEY)
+                api_secret = os.getenv(API_SECRET)
+                timeframe = int(os.getenv(TIMEFRAME, "5"))
 
-            tp_porcent = float(os.getenv(TP_PORCENT, 2))
-            sl_porcent = float(os.getenv(SL_PORCENT, 1))
+                tp_porcent = float(os.getenv(TP_PORCENT, 2))
+                sl_porcent = float(os.getenv(SL_PORCENT, 1))
 
-            cnt_symbols = int(os.getenv(CNT_SYMBOLS, 20))
-            account_percentage = int(os.getenv(ACCOUNT_PERCENTAGE, 4))
-            top_rsi = int(os.getenv(TOP_RSI, 87))
-            bottom_rsi = int(os.getenv(BOTTOM_RSI, 13))
+                cnt_symbols = int(os.getenv(CNT_SYMBOLS, 20))
+                account_percentage = int(os.getenv(ACCOUNT_PERCENTAGE, 4))
+                top_rsi = int(os.getenv(TOP_RSI, 87))
+                bottom_rsi = int(os.getenv(BOTTOM_RSI, 13))
 
-            sleep_rand_from = int(os.getenv(SLEEP_RAND_FROM, 10))
-            sleep_rand_to = int(os.getenv(SLEEP_RAND_TO, 20))
+                sleep_rand_from = int(os.getenv(SLEEP_RAND_FROM, 10))
+                sleep_rand_to = int(os.getenv(SLEEP_RAND_TO, 20))
 
-            sl_callback_percentage = int(os.getenv(SL_CALLBACK_PERCENTAGE, 1))
-            verify_rsi = int(os.getenv(VERIFY_RSI, 5))
-            Bollinger_bands_width = int(os.getenv(BB_WIDTH, 5))
-            monitoring = int(os.getenv(MONITORING, 0))
-            max_ops = int(os.getenv(MAX_OPS, 1))
-        except ValueError as e:
-            print(f"Error al convertir una variable de entorno: {e}")
+                sl_callback_percentage = int(os.getenv(SL_CALLBACK_PERCENTAGE, 1))
+                verify_rsi = int(os.getenv(VERIFY_RSI, 5))
+                Bollinger_bands_width = int(os.getenv(BB_WIDTH, 5))
+                monitoring = int(os.getenv(MONITORING, 0))
+                max_ops = int(os.getenv(MAX_OPS, 1))
+            except ValueError as e:
+                print(f"Error al convertir una variable de entorno: {e}")
 
 
         time.sleep(60)

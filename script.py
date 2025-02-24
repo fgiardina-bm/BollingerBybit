@@ -14,6 +14,7 @@ import random
 import json
 from functions import *
 from indicators import *
+from config import config_lock, reload_config
 
 logger(f"Bot iniciado {timeframe}")
 
@@ -27,14 +28,13 @@ except Exception as e:
 opened_positions = [];
 def operar(simbolos):
     global opened_positions
-    global account_percentage
     global saldo_usdt_inicial
-    global top_rsi
-    global bottom_rsi
-    global sleep_rand_from
-    global sleep_rand_to
+    global api_key, api_secret, timeframe, tp_porcent, sl_porcent, cnt_symbols
+    global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
+    global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
 
-    logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
+    with config_lock:
+        logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
 
     while True:
 
@@ -77,10 +77,11 @@ def operar(simbolos):
                         opened_positions.remove(symbol)
 
 
-                    if len(opened_positions) >= max_ops:
-                        logger(f"Se alcanzó el límite de posiciones abiertas | {max_ops}.")
-                        time.sleep(60)
-                        continue
+                    with config_lock:
+                        if len(opened_positions) >= max_ops:
+                            logger(f"Se alcanzó el límite de posiciones abiertas | {max_ops}.")
+                            time.sleep(60)
+                            continue
 
 
                     # Obtener datos historicos

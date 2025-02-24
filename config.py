@@ -43,9 +43,14 @@ monitoring = int(os.getenv(MONITORING, 0))
 max_ops = int(os.getenv(MAX_OPS, 1))
 
 def reload_config():
+    
     global api_key, api_secret, timeframe, tp_porcent, sl_porcent, cnt_symbols
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
+
+    log_path = f"logs/log-{timeframe}-{time.strftime('%Y%m%d')}.txt"
+    with open(log_path, "a") as log_file:
+        log_file.write(str(timeframe) + '|' + time.strftime('%Y-%m-%d %H:%M:%S') + " reload_config\n")
 
     config_path = '.env'
 
@@ -77,6 +82,7 @@ def reload_config():
         max_ops = int(os.getenv(MAX_OPS, 1))
     except ValueError as e:
         print(f"Error al convertir una variable de entorno: {e}")
+
 
     time.sleep(60)
   

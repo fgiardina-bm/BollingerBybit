@@ -14,7 +14,7 @@ import random
 import json
 from functions import *
 from indicators import *
-from config import config_lock, reload_config
+from config import reload_config
 
 logger(f"Bot iniciado {timeframe}")
 
@@ -33,8 +33,7 @@ def operar(simbolos):
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions_long, opened_positions_short
     
-    with config_lock:
-        logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
+    logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
 
     while True:
 

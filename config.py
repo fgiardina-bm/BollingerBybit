@@ -60,50 +60,43 @@ def reload_config():
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions, opened_positions_short, opened_positions_long
     global max_ops_short, max_ops_long
-    
-    while True:
-        with config_lock:
-            log_path = f"logs/log-{timeframe}-{time.strftime('%Y%m%d')}.txt"
-            with open(log_path, "a") as log_file:
-                log_file.write(str(timeframe) + '|' + time.strftime('%Y-%m-%d %H:%M:%S') + " reload_config\n")
-
-            config_path = '.env'
-
-            if timeframe == 60:
-                config_path = '.env60'
-
-            if timeframe == 240:
-                config_path = '.env4'
-
-            load_dotenv(config_path, override=True)
-
-            try:
-                api_key = os.getenv(API_KEY)
-                api_secret = os.getenv(API_SECRET)
-                timeframe = int(os.getenv(TIMEFRAME, "5"))
-
-                tp_porcent = float(os.getenv(TP_PORCENT, 2))
-                sl_porcent = float(os.getenv(SL_PORCENT, 1))
-
-                cnt_symbols = int(os.getenv(CNT_SYMBOLS, 20))
-                account_percentage = int(os.getenv(ACCOUNT_PERCENTAGE, 4))
-                top_rsi = int(os.getenv(TOP_RSI, 87))
-                bottom_rsi = int(os.getenv(BOTTOM_RSI, 13))
-
-                sleep_rand_from = int(os.getenv(SLEEP_RAND_FROM, 10))
-                sleep_rand_to = int(os.getenv(SLEEP_RAND_TO, 20))
-
-                sl_callback_percentage = int(os.getenv(SL_CALLBACK_PERCENTAGE, 1))
-                verify_rsi = int(os.getenv(VERIFY_RSI, 5))
-                Bollinger_bands_width = int(os.getenv(BB_WIDTH, 5))
-                monitoring = int(os.getenv(MONITORING, 0))
-                max_ops = int(os.getenv(MAX_OPS, 1))
-                max_ops_short = int(os.getenv(MAX_OPS_SHORT, 2))
-                max_ops_long = int(os.getenv(MAX_OPS_LONG, 2))
-
-            except ValueError as e:
-                print(f"Error al convertir una variable de entorno: {e}")
 
 
-        time.sleep(60)
+    config_path = '.env'
+
+    if timeframe == 60:
+        config_path = '.env60'
+
+    if timeframe == 240:
+        config_path = '.env4'
+
+    load_dotenv(config_path, override=True)
+
+    try:
+        api_key = os.getenv(API_KEY)
+        api_secret = os.getenv(API_SECRET)
+        timeframe = int(os.getenv(TIMEFRAME, "5"))
+
+        tp_porcent = float(os.getenv(TP_PORCENT, 2))
+        sl_porcent = float(os.getenv(SL_PORCENT, 1))
+
+        cnt_symbols = int(os.getenv(CNT_SYMBOLS, 20))
+        account_percentage = int(os.getenv(ACCOUNT_PERCENTAGE, 4))
+        top_rsi = int(os.getenv(TOP_RSI, 87))
+        bottom_rsi = int(os.getenv(BOTTOM_RSI, 13))
+
+        sleep_rand_from = int(os.getenv(SLEEP_RAND_FROM, 10))
+        sleep_rand_to = int(os.getenv(SLEEP_RAND_TO, 20))
+
+        sl_callback_percentage = int(os.getenv(SL_CALLBACK_PERCENTAGE, 1))
+        verify_rsi = int(os.getenv(VERIFY_RSI, 5))
+        Bollinger_bands_width = int(os.getenv(BB_WIDTH, 5))
+        monitoring = int(os.getenv(MONITORING, 0))
+        max_ops = int(os.getenv(MAX_OPS, 1))
+        max_ops_short = int(os.getenv(MAX_OPS_SHORT, 2))
+        max_ops_long = int(os.getenv(MAX_OPS_LONG, 2))
+
+    except ValueError as e:
+        print(f"Error al convertir una variable de entorno: {e}")
+
   

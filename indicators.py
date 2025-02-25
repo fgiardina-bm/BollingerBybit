@@ -120,11 +120,11 @@ def detectar_cambio_tendencia(open_prices, high_prices, low_prices, close_prices
 
     # Última vela (índice -1)
     if patron_alcista[-1] > 0:  # Si hay patrón alcista
-        if rsi[-1] > 70 and (macd[-1] > macd_signal[-1] and macd[-2] < macd_signal[-2]):
+        if rsi[-1] > 70 or (macd[-1] > macd_signal[-1] and macd[-2] < macd_signal[-2]):
             return "A"
 
     if patron_bajista[-1] < 0:  # Si hay patrón bajista
-        if rsi[-1] < 30 and (macd[-1] < macd_signal[-1] and macd[-2] > macd_signal[-2]):
+        if rsi[-1] < 30 or (macd[-1] < macd_signal[-1] and macd[-2] > macd_signal[-2]):
             return "B"
 
     return ""  # No hay señal clara

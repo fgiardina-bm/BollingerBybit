@@ -452,7 +452,7 @@ def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):
                 if side == 'Buy':
                     # if precio_actual > pe and (precio_actual - precio_entrada) / precio_entrada >= (sl_callback_percentage / 100):
                     # if (precio_actual * 1.02) > pe:
-                    if precio_actual > pe:
+                    if precio_actual > (pe * 1.01):
                         nuevo_stop_loss = precio_actual * (1 - sl_callback_percentage / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
                         pe = precio_actual
@@ -460,7 +460,7 @@ def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):
                 else:
                     # if precio_actual < pe and (precio_entrada - precio_actual) / precio_entrada >= (sl_callback_percentage / 100):
                     # if (precio_actual * 0.98) < pe:
-                    if precio_actual < pe:
+                    if precio_actual < (pe * 0.99):
                         nuevo_stop_loss = precio_actual * (1 + sl_callback_percentage / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
                         pe = precio_actual

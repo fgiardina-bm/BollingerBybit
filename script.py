@@ -14,7 +14,7 @@ import random
 import json
 from functions import *
 from indicators import *
-from config import config_lock, reload_config
+from config import reload_config
 
 logger(f"Bot iniciado {timeframe}")
 
@@ -34,8 +34,7 @@ def operar(simbolos):
     global opened_positions_long, opened_positions_short
     global max_ops_long, max_ops_short
 
-    with config_lock:
-        logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
+    logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
 
     while True:
 
@@ -77,12 +76,10 @@ def operar(simbolos):
                     if symbol in opened_positions:
                         opened_positions.remove(symbol)
 
-
-                    with config_lock:
-                        if len(opened_positions) >= max_ops:
-                            logger(f"Se alcanzó el límite de posiciones abiertas | {max_ops}.")
-                            time.sleep(60)
-                            continue
+                    if len(opened_positions) >= max_ops:
+                        logger(f"Se alcanzó el límite de posiciones abiertas | {max_ops}.")
+                        time.sleep(60)
+                        continue
 
 
                     # Obtener datos historicos

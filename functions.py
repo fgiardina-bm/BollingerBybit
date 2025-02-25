@@ -450,16 +450,12 @@ def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):
                 precio_actual = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
                 logger(f"monitorear_operaciones_abiertas {symbol} - Precio actual de {symbol}: {precio_actual} - Precio de entrada: {precio_entrada}")
                 if side == 'Buy':
-                    # if precio_actual > pe and (precio_actual - precio_entrada) / precio_entrada >= (sl_callback_percentage / 100):
-                    # if (precio_actual * 1.02) > pe:
                     if precio_actual > (pe * 1.01):
                         nuevo_stop_loss = precio_actual * (1 - sl_callback_percentage / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
                         pe = precio_actual
                         logger(f"monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Buy")
                 else:
-                    # if precio_actual < pe and (precio_entrada - precio_actual) / precio_entrada >= (sl_callback_percentage / 100):
-                    # if (precio_actual * 0.98) < pe:
                     if precio_actual < (pe * 0.99):
                         nuevo_stop_loss = precio_actual * (1 + sl_callback_percentage / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)

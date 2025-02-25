@@ -69,9 +69,6 @@ def reload_config():
 
             config_path = '.env'
 
-            if timeframe == 15:
-                config_path = '.env15'
-
             if timeframe == 60:
                 config_path = '.env60'
 

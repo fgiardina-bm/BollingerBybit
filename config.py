@@ -69,6 +69,12 @@ def reload_config():
 
             config_path = '.env'
 
+            if timeframe == 15:
+                config_path = '.env15'
+
+            if timeframe == 60:
+                config_path = '.env60'
+
             if timeframe == 240:
                 config_path = '.env4'
 
@@ -97,6 +103,9 @@ def reload_config():
                 max_ops = int(os.getenv(MAX_OPS, 1))
                 max_ops_short = int(os.getenv(MAX_OPS_SHORT, 2))
                 max_ops_long = int(os.getenv(MAX_OPS_LONG, 2))
+
+                with open(log_path, "a") as log_file:
+                    log_file.write(str(timeframe) + '|' + time.strftime('%Y-%m-%d %H:%M:%S') + "max_ops_short: {max_ops_short} | max_ops_long:{max_ops_long} \n")
 
             except ValueError as e:
                 print(f"Error al convertir una variable de entorno: {e}")

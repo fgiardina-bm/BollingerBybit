@@ -101,9 +101,6 @@ def reload_config():
                 max_ops_short = int(os.getenv(MAX_OPS_SHORT, 2))
                 max_ops_long = int(os.getenv(MAX_OPS_LONG, 2))
 
-                with open(log_path, "a") as log_file:
-                    log_file.write(str(timeframe) + '|' + time.strftime('%Y-%m-%d %H:%M:%S') + "max_ops_short: {max_ops_short} | max_ops_long:{max_ops_long} \n")
-
             except ValueError as e:
                 print(f"Error al convertir una variable de entorno: {e}")
 

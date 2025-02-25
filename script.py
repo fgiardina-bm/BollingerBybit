@@ -41,6 +41,7 @@ def operar(simbolos):
 
          for symbol in simbolos:
             try:
+                reload_config()
                 posiciones = get_opened_positions(symbol=symbol)
                 if float(posiciones['result']['list'][0]['size']) != 0:
 
@@ -190,11 +191,7 @@ def operar(simbolos):
                 time.sleep(60)
 
          time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
-
-
-reload_config_process = threading.Thread(target=reload_config)
-reload_config_process.start()
-
+         
 # Lista de otros símbolos a buscar
 otros_simbolos = obtener_simbolos_mayor_volumen(cnt_symbols)
 

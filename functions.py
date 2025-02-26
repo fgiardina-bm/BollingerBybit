@@ -378,7 +378,7 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
         time.sleep(20)
 
 def analizar_posible_orden_patron_velas(symbol, side, order_type, qty, bollinger_init_data, rsi_init_data):
-    global opened_positions
+    global opened_positions, monitoring
     rsi = rsi_init_data
 
     while True:
@@ -448,7 +448,7 @@ def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):
             posiciones = client.get_positions(category="linear", symbol=symbol)
             if float(posiciones['result']['list'][0]['size']) != 0:
                 precio_actual = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
-                logger(f"monitorear_operaciones_abiertas {symbol} - Precio actual de {symbol}: {precio_actual} - Precio de entrada: {precio_entrada}")
+                logger(f"monitorear_operaciones_abiertas {symbol} - Precio actual: {precio_actual} - Precio de entrada: {precio_entrada}")
                 if side == 'Buy':
                     if precio_actual > (pe * 1.01):
                         nuevo_stop_loss = precio_actual * (1 - sl_callback_percentage / 100)

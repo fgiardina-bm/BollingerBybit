@@ -4,14 +4,6 @@ services:
     container_name: bbpy
     restart: always
     env_file:
-      - /home/ubuntu/.env
+      - ./.prod.env
     volumes:
-      - /home/ubuntu:/app/logs
-  bbpy4:
-    image: fgiardina/bbpy:latest
-    container_name: bbpy4
-    restart: always
-    env_file:
-      - /home/ubuntu/.env4
-    volumes:
-      - /home/ubuntu:/app/logs
+      - ./:/app/logs

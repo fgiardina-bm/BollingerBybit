@@ -39,13 +39,14 @@ bottom_rsi = int(os.getenv(BOTTOM_RSI, 13))
 sleep_rand_from = int(os.getenv(SLEEP_RAND_FROM, 10))
 sleep_rand_to = int(os.getenv(SLEEP_RAND_TO, 20))
 
-sl_callback_percentage = int(os.getenv(SL_CALLBACK_PERCENTAGE, 1))
+sl_callback_percentage = float(os.getenv(SL_CALLBACK_PERCENTAGE, 1))
 verify_rsi = int(os.getenv(VERIFY_RSI, 5))
 Bollinger_bands_width = int(os.getenv(BB_WIDTH, 5))
 monitoring = int(os.getenv(MONITORING, 1))
 max_ops = int(os.getenv(MAX_OPS, 1))
 max_ops_short = int(os.getenv(MAX_OPS_SHORT, 2))
 max_ops_long = int(os.getenv(MAX_OPS_LONG, 2))
+strategy = int(os.getenv("STRATEGY", 1))
 
 config_lock = threading.Lock()
 
@@ -59,7 +60,7 @@ def reload_config():
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions, opened_positions_short, opened_positions_long
-    global max_ops_short, max_ops_long
+    global max_ops_short, max_ops_long, strategy
 
 
     config_path = '.env'
@@ -88,13 +89,15 @@ def reload_config():
         sleep_rand_from = int(os.getenv(SLEEP_RAND_FROM, 10))
         sleep_rand_to = int(os.getenv(SLEEP_RAND_TO, 20))
 
-        sl_callback_percentage = int(os.getenv(SL_CALLBACK_PERCENTAGE, 1))
+        sl_callback_percentage = float(os.getenv(SL_CALLBACK_PERCENTAGE, 1))
         verify_rsi = int(os.getenv(VERIFY_RSI, 5))
         Bollinger_bands_width = int(os.getenv(BB_WIDTH, 5))
         monitoring = int(os.getenv(MONITORING, 1))
         max_ops = int(os.getenv(MAX_OPS, 1))
         max_ops_short = int(os.getenv(MAX_OPS_SHORT, 2))
         max_ops_long = int(os.getenv(MAX_OPS_LONG, 2))
+
+        strategy = int(os.getenv("STRATEGY", 1))
 
     except ValueError as e:
         print(f"Error al convertir una variable de entorno: {e}")

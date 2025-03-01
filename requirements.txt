@@ -3,3 +3,7 @@ pybit==5.9.0
 python-dotenv==1.0.1
 numpy==2.2.2
 TA-Lib==0.6.3
+binance-futures
+ccxt
+python-binance
+matplotlib

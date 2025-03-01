@@ -120,11 +120,11 @@ def detectar_cambio_tendencia(open_prices, high_prices, low_prices, close_prices
 
     # Última vela (índice -1)
     if patron_alcista[-1] > 0:  # Si hay patrón alcista
-        if rsi[-1] > 70 or (macd[-1] > macd_signal[-1] and macd[-2] < macd_signal[-2]):
+        if rsi[-1] < 30 or (macd[-1] > macd_signal[-1] and macd[-2] < macd_signal[-2]):
             return "A"
 
     if patron_bajista[-1] < 0:  # Si hay patrón bajista
-        if rsi[-1] < 30 or (macd[-1] < macd_signal[-1] and macd[-2] > macd_signal[-2]):
+        if rsi[-1] > 70 or (macd[-1] < macd_signal[-1] and macd[-2] > macd_signal[-2]):
             return "B"
 
     return ""  # No hay señal clara
@@ -185,3 +185,46 @@ def patron_velas_bajistas(open_prices, high_prices, low_prices, close_prices):
                      + talib.CDL3BLACKCROWS(open_prices, high_prices, low_prices, close_prices)
 
     return patron_bajista[-1] < 0
+
+
+
+def patron_velas_martillo_alcista(open_prices, high_prices, low_prices, close_prices):
+    
+    patron_martillo_alcista = talib.CDLENGULFING(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDLHAMMER(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDLPIERCING(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDLMORNINGSTAR(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDL3WHITESOLDIERS(open_prices, high_prices, low_prices, close_prices)
+
+    rsi = talib.RSI(close_prices, timeperiod=14)
+
+    return patron_martillo_alcista[-1] > 0 and (rsi[-1] < 25)
+
+def patron_velas_martillo_bajista(open_prices, high_prices, low_prices, close_prices):
+
+    patron_martillo_bajista = talib.CDLENGULFING(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDLSHOOTINGSTAR(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDLDARKCLOUDCOVER(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDLEVENINGSTAR(open_prices, high_prices, low_prices, close_prices) \
+                     + talib.CDL3BLACKCROWS(open_prices, high_prices, low_prices, close_prices)
+
+    rsi = talib.RSI(close_prices, timeperiod=14)
+
+    return patron_martillo_bajista[-1] < 0 and (rsi[-1] > 75)
+
+
+
+
+
+
+
+
+def macd_alcista(close_prices):
+    macd, macd_signal, _ = talib.MACD(close_prices, fastperiod=12, slowperiod=26, signalperiod=9)
+
+    return (macd[-1] > macd_signal[-1] and macd[-2] < macd_signal[-2])
+
+def macd_bajista(close_prices):
+    macd, macd_signal, _ = talib.MACD(close_prices, fastperiod=12, slowperiod=26, signalperiod=9)
+
+    return (macd[-1] < macd_signal[-1] and macd[-2] > macd_signal[-2])

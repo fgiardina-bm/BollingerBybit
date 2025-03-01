@@ -10,6 +10,16 @@ from concurrent.futures import ThreadPoolExecutor
 from config import *
 from indicators import *
 import threading
+import numpy as np
+import matplotlib
+# Configuración para entorno headless (sin interfaz gráfica) como Docker
+matplotlib.use('Agg')  # Debe ejecutarse antes de importar pyplot
+import matplotlib.pyplot as plt
+from datetime import datetime
+import argparse
+import logging
+from typing import Tuple, List, Optional, Dict, Any
+import os
 
 client = HTTP(api_key=api_key, api_secret=api_secret, testnet=False)
 
@@ -183,35 +193,43 @@ def crear_orden(symbol, side, order_type, qty):
         )
         logger("Orden creada con exito:" + str(response))
 
-        time.sleep(1)
-        establecer_st_tp(symbol)
+        # time.sleep(1)
+        # establecer_st_tp(symbol)
 
     except Exception as e:
         logger(f"Error al crear la orden: {e}")
 
 def establecer_st_tp(symbol):
-    try:
-        posiciones = client.get_positions(category="linear", symbol=symbol)
-        if float(posiciones['result']['list'][0]['size']) != 0:
-            if not verificar_posicion_abierta(symbol):
-                precio_de_entrada = float(posiciones['result']['list'][0]['avgPrice'])
-                if posiciones['result']['list'][0]['side']  == 'Buy':
-                    stop_loss_price = precio_de_entrada * (1 - sl_porcent / 100)
-                    take_profit_price = precio_de_entrada * (1 + tp_porcent / 100)
-                    result_sl = establecer_stop_loss(symbol, stop_loss_price)
-                    result_tp = establecer_take_profit(symbol,take_profit_price, "Sell")
-                    if result_sl and result_tp:
-                        logger(f"{symbol} Stop loss y take profit activados")
-                    
-                else:
-                    stop_loss_price = precio_de_entrada * (1 + sl_porcent / 100)
-                    take_profit_price = precio_de_entrada * (1 - tp_porcent / 100)
-                    result_sl = establecer_stop_loss(symbol, stop_loss_price)
-                    result_tp = establecer_take_profit(symbol, take_profit_price, "Buy")
-                    if result_sl and result_tp:
-                        logger(f"{symbol} Stop loss y take profit activados")
-    except Exception as e:
-        logger(f"{symbol} Error al establecer stop loss y take profit: {e}")                   
+    limit = 10
+    while True:
+        limit -= 1
+        try:
+            posiciones = client.get_positions(category="linear", symbol=symbol)
+            if float(posiciones['result']['list'][0]['size']) != 0:
+                if not verificar_posicion_abierta(symbol):
+                    precio_de_entrada = float(posiciones['result']['list'][0]['avgPrice'])
+                    if posiciones['result']['list'][0]['side']  == 'Buy':
+                        stop_loss_price = precio_de_entrada * (1 - sl_porcent / 100)
+                        take_profit_price = precio_de_entrada * (1 + tp_porcent / 100)
+                        result_sl = establecer_stop_loss(symbol, stop_loss_price)
+                        result_tp = establecer_take_profit(symbol,take_profit_price, "Sell")
+                        if result_sl and result_tp:
+                            logger(f"{symbol} Stop loss y take profit activados")
+                        
+                    else:
+                        stop_loss_price = precio_de_entrada * (1 + sl_porcent / 100)
+                        take_profit_price = precio_de_entrada * (1 - tp_porcent / 100)
+                        result_sl = establecer_stop_loss(symbol, stop_loss_price)
+                        result_tp = establecer_take_profit(symbol, take_profit_price, "Buy")
+                        if result_sl and result_tp:
+                            logger(f"{symbol} {limit} Stop loss y take profit activados")
+
+                    break
+        except Exception as e:
+            logger(f"{symbol} {limit} Error al establecer stop loss y take profit: {e}")                   
+
+        if limit == 0:
+            break
 
 def establecer_stop_loss(symbol, sl):
 
@@ -261,6 +279,47 @@ def establecer_take_profit(symbol, tp, side):
     except Exception as e:
         logger(f"{symbol} Error al establecer el take profit: {e}")
         return None
+
+
+
+def establecer_stop_loss2(symbol, sl):
+
+    try:
+        sl = qty_step(sl,symbol)
+
+        order = client.set_trading_stop(
+            category="linear",
+            symbol=symbol,
+            stopLoss=sl,
+            slTriggerB="LastPrice",
+            positionIdx=0
+        )
+  
+        logger(f"{symbol} Stop loss establecido en {sl}")
+        return order
+    except Exception as e:
+        logger(f"{symbol} Error al establecer el stop loss: {e}")
+        return None
+
+def establecer_take_profit2(symbol, tp, side):
+    price_tp = qty_step(tp,symbol)
+
+    try:
+        # Establecer el take profit en la posición
+        order = client.set_trading_stop(
+            category="linear",
+            symbol=symbol,
+            takeProfit=price_tp,
+            tpTriggerBy="LastPrice",
+            positionIdx=0
+        )
+
+        logger(f"{symbol} Take profit establecido a {price_tp}")
+        return order
+    except Exception as e:
+        logger(f"{symbol} Error al establecer el take profit: {e}")
+        return None
+
 
 def establecer_trailing_stop(symbol, tp, side, qty, callback_ratio=1):
 
@@ -377,6 +436,87 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
 
         time.sleep(20)
 
+def analizar_posible_orden_macd_syr(symbol, side, order_type, qty, bollinger_init_data, rsi_init_data):
+
+    rsi = rsi_init_data
+    max_min_rsi = rsi_init_data
+
+    soportes, resistencias, valor_actual = get_soportes_resistencia(symbol)
+
+    for soporte in soportes:
+        porcentaje = ((valor_actual - soporte) / soporte) * 100
+        logger(f"{symbol} {valor_actual:.5f} | Soporte {soporte} | Porcentaje {porcentaje:.2f}%")
+
+    for resistencia in resistencias:
+        porcentaje = ((resistencia - valor_actual) / valor_actual) * 100
+        logger(f"{symbol} {valor_actual:.5f} | Resistencia {resistencia} | Porcentaje {porcentaje:.2f}%")
+
+
+    while True:
+        try:
+            logger(f"analizar_posible_orden en {symbol} - {side} - {order_type} - {qty} - {bollinger_init_data['UpperBand']} -  {bollinger_init_data['LowerBand']} -  {bollinger_init_data['MA']} -  {bollinger_init_data['BB_Width_%']} - RSI INICIAL: {rsi_init_data} - RSI ACTUAL{(rsi)}")
+            if not verificar_posicion_abierta(symbol):
+                logger(f"analizar_posible_orden en {symbol} - No hay posiciones abiertas en {symbol}")
+                datam = obtener_datos_historicos(symbol, timeframe)
+                bollinger = calcular_bandas_bollinger(datam)
+                rsi = calcular_rsi_talib(datam[4])
+
+                bb_width = bollinger['BB_Width_%']
+                if bb_width < Bollinger_bands_width:
+                    logger(f"analizar_posible_orden en {symbol} - bb_width {bb_width} - Bollinger_bands_width {Bollinger_bands_width}")
+                    time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                    continue;
+                    
+                if side == "Sell": # bollineger y RSI altos
+                    if rsi > max_min_rsi:
+                        max_min_rsi = rsi
+
+                    rsi_limit = float(rsi) + float(verify_rsi)
+
+                    # si macd da senal bajista entrol
+                    if macd_bajista(np.array(datam[4])):
+                        logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty}")
+                        crear_orden(symbol, side, order_type, qty)
+
+                        if monitoring == 1:
+                            # Iniciar el monitoreo de la operación
+                            precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
+                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, side, qty))
+                            hilo_monitoreo.start()
+
+                        break
+                    else:
+                        logger(f"analizar_posible_orden en {symbol} - SELL RSI en {symbol} rsi_limit: {rsi_limit} es mayor a max_min_rsi: {max_min_rsi} - rsi_init_data: {rsi_init_data} - Actual UB: {bollinger['UpperBand']} - Inicial UB: {bollinger_init_data['UpperBand']}")
+
+                else:
+
+                    if rsi < max_min_rsi:
+                        max_min_rsi = rsi
+
+                    rsi_limit = float(rsi) - float(verify_rsi)
+                    if macd_alcista(np.array(datam[4])):
+                        logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty}")
+                        crear_orden(symbol, side, order_type, qty)
+                        if monitoring == 1:
+                            # Iniciar el monitoreo de la operación
+                            precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
+                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abierta_macd_syr, args=(symbol, precio_entrada, side, qty))
+                            hilo_monitoreo.start()
+                            
+                        break
+                    else:
+                       logger(f"analizar_posible_orden en {symbol} - BUY RSI en {symbol} rsi_limit: {rsi_limit} es menor a max_min_rsi: {max_min_rsi} - rsi_init_data: {rsi_init_data} - Actual LB: {bollinger['LowerBand']} - Inicial LB: {bollinger_init_data['LowerBand']}")
+
+            else:
+                logger(f"analizar_posible_orden en {symbol} - Ya hay una posición abierta en {symbol}")
+                break
+        except Exception as e:
+            logger(f"analizar_posible_orden en {symbol} - Error al analizar posible orden en {symbol}: {e}")
+            break
+
+        time.sleep(20)
+
+
 def analizar_posible_orden_patron_velas(symbol, side, order_type, qty, bollinger_init_data, rsi_init_data):
     global opened_positions, monitoring
     rsi = rsi_init_data
@@ -450,13 +590,13 @@ def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):
                 precio_actual = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
                 logger(f"monitorear_operaciones_abiertas {symbol} - Precio actual: {precio_actual} - Precio de entrada: {precio_entrada}")
                 if side == 'Buy':
-                    if precio_actual > (pe * 1.01):
+                    if precio_actual > (pe * 1.005):
                         nuevo_stop_loss = precio_actual * (1 - sl_callback_percentage / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
                         pe = precio_actual
                         logger(f"monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Buy")
                 else:
-                    if precio_actual < (pe * 0.99):
+                    if precio_actual < (pe * 0.995):
                         nuevo_stop_loss = precio_actual * (1 + sl_callback_percentage / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
                         pe = precio_actual
@@ -465,10 +605,71 @@ def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):
                 logger(f"monitorear_operaciones_abiertas {symbol} No hay posiciones abiertas en {symbol}. Saliendo del monitoreo.")
                 break
 
-            time.sleep(10)
+            time.sleep(random.randint(int(sleep_rand_from/4), int(sleep_rand_to/4)))
         except Exception as e:
             logger(f"monitorear_operaciones_abiertas {symbol} Error al monitorear la operación en {symbol}: {e}")
             break
+
+
+
+def monitorear_operaciones_abierta_macd_syr(symbol, precio_entrada, side, qty):
+    pe = precio_entrada
+    while True:
+        try:
+            posiciones = client.get_positions(category="linear", symbol=symbol)
+            if float(posiciones['result']['list'][0]['size']) != 0:
+                precio_actual = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
+                logger(f"monitorear_operaciones_abiertas {symbol} - Precio actual: {precio_actual} - Precio de entrada: {precio_entrada}")
+                if side == 'Buy':
+                    if precio_actual > pe:
+                        nuevo_stop_loss = precio_actual * (1 - sl_callback_percentage / 100)
+                        establecer_stop_loss(symbol, nuevo_stop_loss)
+                        pe = precio_actual
+                        logger(f"monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Buy")
+                else:
+                    if precio_actual < pe:
+                        nuevo_stop_loss = precio_actual * (1 + sl_callback_percentage / 100)
+                        establecer_stop_loss(symbol, nuevo_stop_loss)
+                        pe = precio_actual
+                        logger(f"monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Sell")
+            else:
+                logger(f"monitorear_operaciones_abiertas {symbol} No hay posiciones abiertas en {symbol}. Saliendo del monitoreo.")
+                break
+
+            time.sleep(random.randint(int(sleep_rand_from/4), int(sleep_rand_to/4)))
+        except Exception as e:
+            logger(f"monitorear_operaciones_abiertas {symbol} Error al monitorear la operación en {symbol}: {e}")
+            break
+
+def monitorear_operaciones_abiertas_macd(symbol, precio_entrada, side, qty):
+    pe = precio_entrada
+    while True:
+        try:
+            posiciones = client.get_positions(category="linear", symbol=symbol)
+            if float(posiciones['result']['list'][0]['size']) != 0:
+                precio_actual = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
+                logger(f"monitorear_operaciones_abiertas {symbol} - Precio actual: {precio_actual} - Precio de entrada: {precio_entrada}")
+                if side == 'Buy':
+                    if precio_actual > pe:
+                        nuevo_stop_loss = precio_actual * (1 - sl_callback_percentage / 100)
+                        establecer_stop_loss(symbol, nuevo_stop_loss)
+                        pe = precio_actual
+                        logger(f"monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Buy")
+                else:
+                    if precio_actual < pe:
+                        nuevo_stop_loss = precio_actual * (1 + sl_callback_percentage / 100)
+                        establecer_stop_loss(symbol, nuevo_stop_loss)
+                        pe = precio_actual
+                        logger(f"monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Sell")
+            else:
+                logger(f"monitorear_operaciones_abiertas {symbol} No hay posiciones abiertas en {symbol}. Saliendo del monitoreo.")
+                break
+
+            time.sleep(random.randint(int(sleep_rand_from/4), int(sleep_rand_to/4)))
+        except Exception as e:
+            logger(f"monitorear_operaciones_abiertas {symbol} Error al monitorear la operación en {symbol}: {e}")
+            break
+
 
 def get_opened_positions(symbol):
     global opened_positions_long, opened_positions_short
@@ -508,3 +709,79 @@ def t_logger(log_message,aditional_text=""):
     log_path = f"logs/t_log-{timeframe}-{time.strftime('%Y%m%d')}.csv"
     with open(log_path, "a") as log_file:
         log_file.write(str(timeframe) + ";" + time.strftime('%Y-%m-%d %H:%M:%S') + ";" + log_message.replace('.', ',') + aditional_text + "\n")
+
+
+
+# Metodos para calculo de soportes y resistencias
+def calcular_niveles(precios: np.ndarray, bins: int = 20) -> np.ndarray:
+        hist, bin_edges = np.histogram(precios, bins=bins)
+        niveles = (bin_edges[:-1] + bin_edges[1:]) / 2  # Centros de los bins
+        niveles_importantes = niveles[hist > np.percentile(hist, 75)]  # Filtra los más significativos
+        return niveles_importantes
+
+def consolidar_niveles(niveles_tf1: np.ndarray, 
+                        niveles_tf2: np.ndarray, 
+                        niveles_tf3: np.ndarray, 
+                        tolerancia: float = 0.005) -> np.ndarray:
+
+        niveles_totales = np.concatenate([niveles_tf1, niveles_tf2, niveles_tf3])
+        niveles_filtrados = []
+        
+        for nivel in niveles_totales:
+            if not any(abs(nivel - n) < tolerancia * nivel for n in niveles_filtrados):
+                niveles_filtrados.append(nivel)
+                
+        return np.array(sorted(niveles_filtrados))
+        
+
+def encontrar_niveles_cercanos(niveles: np.ndarray, valor_actual: float) -> Tuple[np.ndarray, np.ndarray]:
+
+        niveles = np.array(niveles)
+        soportes = niveles[niveles < valor_actual]
+        resistencias = niveles[niveles > valor_actual]
+
+        # Tomar los dos soportes más cercanos (ordenados de mayor a menor)
+        soportes_cercanos = np.sort(soportes)[-2:] if len(soportes) >= 2 else soportes
+        
+        # Tomar las dos resistencias más cercanas (ordenados de menor a mayor)
+        resistencias_cercanas = np.sort(resistencias)[:2] if len(resistencias) >= 2 else resistencias
+
+        return soportes_cercanos, resistencias_cercanas
+
+def obtener_precio_actual(symbol: str) -> float:
+    try:
+        ticker = client.get_tickers(category='linear', symbol=symbol)
+        precio = float(ticker['result']['list'][0]['lastPrice'])
+        return precio
+    except Exception as e:
+        logger.error(f"Error al obtener el precio actual de {symbol}: {e}")
+        raise
+
+
+def get_soportes_resistencia(symbol, frame1="240", frame2="D", frame3="W", limit1=200, limit2=100, limit3=50, tolerancia=0.005) -> Tuple[np.ndarray, np.ndarray]:
+
+    data1 = obtener_datos_historicos(symbol, frame1, limit1)
+    if data1 is None or len(data1[4]) == 0:
+        raise ValueError(f"No se pudieron obtener datos para {symbol} en timeframe {frame1}")
+    i1 = np.array(data1[4])  # Precios de cierre
+    
+    data2 = obtener_datos_historicos(symbol, frame2, limit2)
+    if data2 is None or len(data2[4]) == 0:
+        raise ValueError(f"No se pudieron obtener datos para {symbol} en timeframe {frame2}")
+    i2 = np.array(data2[4])  # Precios de cierre
+    
+    data3 = obtener_datos_historicos(symbol, frame3, limit3)
+    if data3 is None or len(data3[4]) == 0:
+        raise ValueError(f"No se pudieron obtener datos para {symbol} en timeframe {frame3}")
+    i3 = np.array(data3[4])  # Precios de cierre
+    
+    niveles_1 = calcular_niveles(i1)
+    niveles_2 = calcular_niveles(i2)
+    niveles_3 = calcular_niveles(i3)
+    
+    niveles_finales = consolidar_niveles(niveles_1, niveles_2, niveles_3, tolerancia)
+    valor_actual = obtener_precio_actual(symbol)
+
+    soportes_cercanos, resistencias_cercanas = encontrar_niveles_cercanos(niveles_finales, valor_actual)
+
+    return soportes_cercanos, resistencias_cercanas, valor_actual

@@ -385,6 +385,10 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
                     time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                     continue;
                     
+                if rsi > 45 and rsi < 55:
+                    logger(f"analizar_posible_orden en {symbol} - RSI en instancias medias {rsi} salgo del analisis.")
+                    break
+
                 if side == "Sell": # bollineger y RSI altos
                     if rsi > max_min_rsi:
                         max_min_rsi = rsi
@@ -467,6 +471,10 @@ def analizar_posible_orden_macd_syr(symbol, side, order_type, qty, bollinger_ini
                     time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                     continue;
                     
+                if rsi > 45 and rsi < 55:
+                    logger(f"analizar_posible_orden en {symbol} - RSI en instancias medias {rsi} salgo del analisis.")
+                    break
+
                 if side == "Sell": # bollineger y RSI altos
                     if rsi > max_min_rsi:
                         max_min_rsi = rsi
@@ -540,7 +548,7 @@ def analizar_posible_orden_patron_velas(symbol, side, order_type, qty, bollinger
                 momento_alcista = patron_velas_alcistas(open_prices, high_prices, low_prices, close_prices)
                 momento_bajista = patron_velas_bajistas(open_prices, high_prices, low_prices, close_prices)
 
-                if rsi > 40 and rsi < 60:
+                if rsi > 45 and rsi < 55:
                     logger(f"analizar_posible_orden en {symbol} - RSI en instancias medias {rsi} salgo del analisis.")
                     break
                     

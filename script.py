@@ -144,7 +144,7 @@ def operar(simbolos):
 
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
-                        if usdt < 10:
+                        if saldo_usdt < 10:
                             time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                             continue
 
@@ -171,7 +171,7 @@ def operar(simbolos):
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
 
-                        if usdt < 10:
+                        if saldo_usdt < 10:
                             continue
 
                         precision = precision_step
@@ -280,7 +280,7 @@ def operar2(simbolos):
 
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
-                        if usdt < 10:
+                        if saldo_usdt < 10:
                             time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                             continue
 
@@ -311,7 +311,7 @@ def operar2(simbolos):
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
 
-                        if usdt < 10:
+                        if saldo_usdt < 10:
                             continue
 
                         precision = precision_step
@@ -394,7 +394,7 @@ def operar3(simbolos):
                     # Calcular bandas de bollinger
                     data = calcular_bandas_bollinger(datam)
                     # Calcular RSI
-                    rsi = calcular_rsi_talib(datam[4], window=20)
+                    rsi = calcular_rsi_talib(datam[4], window=14)
 
                     open_prices = np.array(datam[1])
                     high_prices = np.array(datam[2])
@@ -412,7 +412,7 @@ def operar3(simbolos):
                     # Llamar a la función para detectar cambio de tendencia
                     tendencia = detectar_cambio_tendencia(open_prices, high_prices, low_prices, close_prices)
                     
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<5.2f}\t{str(precio >= data['UpperBand']):<5}\t{str(precio <= data['LowerBand']):<5}\tBB_W: {data['BB_Width_%']:<3.0f}\tRSI: {rsi:<3.0f}\tt1:{tendencia:<2}"
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<5.2f}\t{str(precio >= data['UpperBand']):<5}\t{str(precio <= data['LowerBand']):<5}\tBB_W: {data['BB_Width_%']:<3.0f}\tRSI: {rsi:<3.0f}\tstrategy: {strategy}"
                     logger(log_message)
                     
                     #timeframe;date;symbol;price;price24hPcnt;fundingRate;UpperBand;LowerBand;UpperBandCross;LowerBandCross;BB_Width_%;openInterest;rsi;cci;tendencia;tendencia2,macd1, macdsignal1, macdhist1, macd2, macdsignal2, macdhist2
@@ -424,8 +424,8 @@ def operar3(simbolos):
                         time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                         continue;
                         
-                    if precio > data['UpperBand'] and rsi > top_rsi:
-
+                    if precio >= data['UpperBand'] and rsi >= top_rsi:
+                        logger(f"{symbol} {precio > data['LowerBand']} {rsi} {top_rsi}")
                         if len(opened_positions_short) >= max_ops_short:
                             logger(f"{symbol:<18} operaciones abiertas en short {len(opened_positions_short)} | maximo configurado es {max_ops_short}.")
                             time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
@@ -437,7 +437,8 @@ def operar3(simbolos):
 
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
-                        if usdt < 10:
+                        logger(f"saldo_usdt: {saldo_usdt} usdt: {usdt}")
+                        if saldo_usdt < 10:
                             time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                             continue
 
@@ -449,21 +450,22 @@ def operar3(simbolos):
                         logger(f"{symbol} Cantidad de monedas a vender: " + str(qty))
                         analizar_posible_orden_macd_syr(symbol, "Sell", "Market", qty, data, rsi)
 
-                    if precio < data['LowerBand'] and rsi < bottom_rsi:
-
+                    if precio <= data['LowerBand'] and rsi <= bottom_rsi:
+                        logger(f"{symbol} {precio < data['LowerBand']} {rsi} {bottom_rsi}")
                         if len(opened_positions_long) >= max_ops_long:
                             logger(f"{symbol:<18} operaciones abiertas en long {len(opened_positions_long)} | maximo configurado es {max_ops_long}.")
                             time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                             continue
 
+                        
                         # Datos de la moneda precio y pasos.
                         step = client.get_instruments_info(category="linear", symbol=symbol)
                         precision_step = float(step['result']['list'][0]["lotSizeFilter"]["qtyStep"])
 
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
-
-                        if usdt < 10:
+                        logger(f"saldo_usdt: {saldo_usdt} usdt: {usdt}")
+                        if saldo_usdt < 10:
                             continue
 
                         precision = precision_step
@@ -560,8 +562,8 @@ def operar4(simbolos):
                         time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                         continue;
                         
-                    # if macd_bajista(np.array(datam[4])):
-                    if macd_alcista(np.array(datam[4])):
+                    if macd_bajista(np.array(datam[4])):
+                    # if macd_alcista(np.array(datam[4])):
 
                         if len(opened_positions_short) >= max_ops_short:
                             logger(f"{symbol:<18} operaciones abiertas en short {len(opened_positions_short)} | maximo configurado es {max_ops_short}.")
@@ -574,7 +576,7 @@ def operar4(simbolos):
 
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
-                        if usdt < 10:
+                        if saldo_usdt < 10:
                             time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                             continue
 
@@ -592,8 +594,8 @@ def operar4(simbolos):
                             hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas_macd, args=(symbol, precio_entrada, "Sell", qty))
                             hilo_monitoreo.start()
 
-                    # if macd_alcista(np.array(datam[4])):
-                    if macd_bajista(np.array(datam[4])):
+                    if macd_alcista(np.array(datam[4])):
+                    # if macd_bajista(np.array(datam[4])):
 
                         if len(opened_positions_long) >= max_ops_long:
                             logger(f"{symbol:<18} operaciones abiertas en long {len(opened_positions_long)} | maximo configurado es {max_ops_long}.")
@@ -607,7 +609,7 @@ def operar4(simbolos):
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
 
-                        if usdt < 10:
+                        if saldo_usdt < 10:
                             continue
 
                         precision = precision_step

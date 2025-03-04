@@ -228,3 +228,33 @@ def macd_bajista(close_prices):
     macd, macd_signal, _ = talib.MACD(close_prices, fastperiod=12, slowperiod=26, signalperiod=9)
 
     return (macd[-1] < macd_signal[-1] and macd[-2] > macd_signal[-2])
+
+def is_strong_bullish_signal(open_prices, high_prices, low_prices, close_prices):
+    """
+    Devuelve True si hay una fuerte señal alcista (dos o más patrones alcistas detectados en la última vela).
+    """
+    bullish_patterns = [
+        talib.CDLENGULFING(open_prices, high_prices, low_prices, close_prices),
+        talib.CDLHAMMER(open_prices, high_prices, low_prices, close_prices),
+        talib.CDLPIERCING(open_prices, high_prices, low_prices, close_prices),
+        talib.CDLMORNINGSTAR(open_prices, high_prices, low_prices, close_prices),
+        talib.CDL3WHITESOLDIERS(open_prices, high_prices, low_prices, close_prices)
+    ]
+
+    signals = sum(pattern[-1] == 100 for pattern in bullish_patterns)  # Verifica la última vela
+    return signals >= 2  # Si hay 2 o más patrones alcistas en la última vela, retorna True
+
+def is_strong_bearish_signal(open_prices, high_prices, low_prices, close_prices):
+    """
+    Devuelve True si hay una fuerte señal bajista (dos o más patrones bajistas detectados en la última vela).
+    """
+    bearish_patterns = [
+        talib.CDLENGULFING(open_prices, high_prices, low_prices, close_prices),
+        talib.CDLSHOOTINGSTAR(open_prices, high_prices, low_prices, close_prices),
+        talib.CDLDARKCLOUDCOVER(open_prices, high_prices, low_prices, close_prices),
+        talib.CDLEVENINGSTAR(open_prices, high_prices, low_prices, close_prices),
+        talib.CDL3BLACKCROWS(open_prices, high_prices, low_prices, close_prices)
+    ]
+
+    signals = sum(pattern[-1] == -100 for pattern in bearish_patterns)  # Verifica la última vela
+    return signals >= 2  # Si hay 2 o más patrones bajistas en la última vela, retorna True

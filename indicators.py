@@ -368,11 +368,35 @@ def fibonacci_retracement6(symbol, df):
 def esta_cerca(precio, niveles, tolerancia=0.01):  # 1% de tolerancia
     return any(abs(precio - nivel) <= nivel * tolerancia for nivel in niveles)
 
+def filtrar_niveles(niveles, tolerancia):
+    """
+    Filtra una lista de niveles eliminando aquellos que están muy próximos.
+    :param niveles: lista de precios (soportes o resistencias)
+    :param tolerancia: diferencia mínima entre niveles para considerarlos distintos
+    :return: lista filtrada de niveles
+    """
+    if not niveles:
+        return []
+    
+    niveles.sort()
+    niveles_filtrados = [niveles[0]]
+    
+    for nivel in niveles[1:]:
+        if abs(nivel - niveles_filtrados[-1]) >= tolerancia:
+            niveles_filtrados.append(nivel)
+    
+    return niveles_filtrados
+
+
 def confirmar_patron_con_soporte_resistencia(symbol, df, patron_ultimo, window=50, tolerancia=0.01):
     global test_mode
     # Detectamos soportes y resistencias
 
     soportes, resistencias = detectar_soportes_resistencias_opt1(symbol, df, window)
+
+    soportes = filtrar_niveles(soportes, tolerancia=0.01)
+    resistencias = filtrar_niveles(resistencias, tolerancia=0.01)
+
     volumen_aumento = confirmar_volumen6(symbol,df)
     niveles_fib = fibonacci_retracement6(symbol, df)
 

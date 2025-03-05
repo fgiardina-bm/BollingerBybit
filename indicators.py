@@ -258,3 +258,92 @@ def is_strong_bearish_signal(open_prices, high_prices, low_prices, close_prices)
 
     signals = sum(pattern[-1] == -100 for pattern in bearish_patterns)  # Verifica la última vela
     return signals >= 2  # Si hay 2 o más patrones bajistas en la última vela, retorna True
+
+
+# Función para detectar soportes y resistencias
+def detectar_soportes_resistencias6(df, window=50):
+    """
+    Detecta soportes y resistencias utilizando los máximos y mínimos de un periodo de tiempo.
+    :param df: DataFrame con columnas ['high', 'low']
+    :param window: tamaño de ventana para detectar los pivotes
+    :return: niveles de soporte y resistencia
+    """
+    soportes = []
+    resistencias = []
+
+    # Detectamos los pivotes máximos y mínimos dentro de la ventana
+    for i in range(window, len(df) - window):
+        # Pivote alcista (mínimo local)
+        if df['low'][i] == min(df['low'][i - window:i + window]):
+            soportes.append(df['low'][i])
+        
+        # Pivote bajista (máximo local)
+        if df['high'][i] == max(df['high'][i - window:i + window]):
+            resistencias.append(df['high'][i])
+
+    return soportes, resistencias
+
+# Función para analizar el volumen
+def confirmar_volumen6(df, window=20):
+    """
+    Compara el volumen de la vela actual con el promedio de los últimos 'window' períodos.
+    :param df: DataFrame con columna 'volume'
+    :param window: tamaño de la ventana para el promedio
+    :return: Booleano indicando si el volumen está aumentando
+    """
+    df['avg_volume'] = df['volume'].rolling(window).mean()
+    df['volumen_en_aumento'] = df['volume'] > df['avg_volume']
+
+    # Ver si el volumen actual es mayor al promedio
+    return df['volumen_en_aumento'].iloc[-1]
+
+# Función para calcular los niveles de Fibonacci
+def fibonacci_retracement6(df):
+    """
+    Calcula los niveles de Fibonacci de un movimiento entre el máximo y el mínimo reciente.
+    :param df: DataFrame con las columnas 'high' y 'low'
+    :return: diccionario con los niveles de Fibonacci
+    """
+    max_price = df['high'].max()
+    min_price = df['low'].min()
+
+    # Niveles de Fibonacci
+    fib_levels = {
+        '0.236': min_price + 0.236 * (max_price - min_price),
+        '0.382': min_price + 0.382 * (max_price - min_price),
+        '0.5': min_price + 0.5 * (max_price - min_price),
+        '0.618': min_price + 0.618 * (max_price - min_price),
+        '0.786': min_price + 0.786 * (max_price - min_price),
+    }
+
+    return fib_levels
+
+# Función para verificar si un precio está cerca de una lista de niveles en un % de tolerancia
+def esta_cerca(precio, niveles, tolerancia=0.01):  # 1% de tolerancia
+    return any(abs(precio - nivel) <= nivel * tolerancia for nivel in niveles)
+
+def confirmar_patron_con_soporte_resistencia(df, patron_ultimo, window=50, tolerancia=0.01):
+    # Detectamos soportes y resistencias
+    soportes, resistencias = detectar_soportes_resistencias6(df, window)
+    volumen_aumento = confirmar_volumen6(df)
+    niveles_fib = fibonacci_retracement6(df)
+    
+    # Último precio de cierre
+    ultimo_precio = df['close'].iloc[-1]
+    
+    # Verificamos si está cerca de un nivel Fibonacci
+    cerca_fib = esta_cerca(ultimo_precio, niveles_fib.values(), tolerancia)
+
+    # Verificamos si está cerca de un soporte o resistencia
+    cerca_soporte = esta_cerca(ultimo_precio, soportes, tolerancia)
+    cerca_resistencia = esta_cerca(ultimo_precio, resistencias, tolerancia)
+
+    # Condición: patrón alcista cerca de soporte o patrón bajista cerca de resistencia
+    if patron_ultimo == 'alcista':
+        if cerca_soporte and volumen_aumento and cerca_fib:
+            return True,cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib # Confirmación de patrón alcista
+    elif patron_ultimo == 'bajista':
+        if cerca_resistencia and volumen_aumento and cerca_fib:
+            return True,cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib # Confirmación de patrón bajista
+
+    return False,cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib

@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import numpy as np
 import talib
 from config import test_mode
+import time
 
 def calcular_rsi_talib(closes, window=14):
     rsi = talib.RSI(np.array(closes), timeperiod=window)
@@ -272,7 +273,6 @@ def detectar_soportes_resistencias6(symbol, df, window=50):
     soportes = []
     resistencias = []
 
-    # Detectamos los pivotes máximos y mínimos dentro de la ventana
     for i in range(window, len(df) - window):
         # Pivote alcista (mínimo local)
         if df['low'][i] == min(df['low'][i - window:i + window]):
@@ -284,6 +284,52 @@ def detectar_soportes_resistencias6(symbol, df, window=50):
 
     return soportes, resistencias
 
+
+def detectar_soportes_resistencias_opt1(symbol, df, window=50):
+    """
+    Detecta soportes y resistencias utilizando los máximos y mínimos de un periodo de tiempo.
+    :param df: DataFrame con columnas ['high', 'low']
+    :param window: tamaño de ventana para detectar los pivotes
+    :return: niveles de soporte y resistencia
+    """
+    soportes = []
+    resistencias = []
+
+    for i in range(window, len(df)):
+        # Soporte: Mínimo en las últimas 'window' velas
+        if df['low'][i] == min(df['low'][i - window:i + 1]):
+            soportes.append(df['low'][i])
+
+        # Resistencia: Máximo en las últimas 'window' velas
+        if df['high'][i] == max(df['high'][i - window:i + 1]):
+            resistencias.append(df['high'][i])
+
+    return soportes, resistencias
+
+
+
+def detectar_soportes_resistencias_opt2(symbol, df, window=50, delta=0.0001):
+    """
+    Similar a la versión anterior, pero permite una tolerancia 'delta' para detectar
+    soportes y resistencias y evitar falsos negativos por pequeñas diferencias.
+    :param df: DataFrame con columnas ['high', 'low']
+    :param window: número de observaciones a considerar a cada lado del punto actual.
+    :param delta: tolerancia para la comparación
+    :return: Tupla con listas: (soportes, resistencias)
+    """
+    df['rolling_min'] = df['low'].rolling(window=2*window+1, center=True).min()
+    df['rolling_max'] = df['high'].rolling(window=2*window+1, center=True).max()
+
+    # Se consideran soportes/resistencias si el valor actual está dentro del rango definido por delta
+    df['soporte'] = abs(df['low'] - df['rolling_min']) < delta
+    df['resistencia'] = abs(df['high'] - df['rolling_max']) < delta
+
+    soportes = df.loc[df['soporte'], 'low'].tolist()
+    resistencias = df.loc[df['resistencia'], 'high'].tolist()
+
+    return soportes, resistencias
+
+
 # Función para analizar el volumen
 def confirmar_volumen6(symbol, df, window=20):
     """
@@ -294,8 +340,6 @@ def confirmar_volumen6(symbol, df, window=20):
     """
     df['avg_volume'] = df['volume'].rolling(window).mean()
     df['volumen_en_aumento'] = df['volume'] > df['avg_volume']
-    print(f"{symbol} avg_volume: {df['avg_volume']} | volume: { df['volume']} |  volumen_en_aumento: {df['volumen_en_aumento'].iloc[-1]}\n")
-
     # Ver si el volumen actual es mayor al promedio
     return df['volumen_en_aumento'].iloc[-1]
 
@@ -328,16 +372,12 @@ def confirmar_patron_con_soporte_resistencia(symbol, df, patron_ultimo, window=5
     global test_mode
     # Detectamos soportes y resistencias
 
-    soportes, resistencias = detectar_soportes_resistencias6(symbol, df, window)
+    soportes, resistencias = detectar_soportes_resistencias_opt1(symbol, df, window)
     volumen_aumento = confirmar_volumen6(symbol,df)
     niveles_fib = fibonacci_retracement6(symbol, df)
 
     if test_mode == 1:
-        print(f"{symbol} ultimo_precio: {df['close'].iloc[-1]}\n")
-        print(f"{symbol} Soportes: {soportes}\n")
-        print(f"{symbol} Resistencias: {resistencias}\n")
-        print(f"{symbol} volumen_aumento: {volumen_aumento}\n")
-        print(f"{symbol} niveles_fib: {niveles_fib}\n")
+        print(f"1 {symbol} {resistencias} | {df['close'].iloc[-1]} | {soportes}")
     
     # Último precio de cierre
     ultimo_precio = df['close'].iloc[-1]

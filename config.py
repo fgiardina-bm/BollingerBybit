@@ -47,7 +47,7 @@ max_ops = int(os.getenv(MAX_OPS, 1))
 max_ops_short = int(os.getenv(MAX_OPS_SHORT, 2))
 max_ops_long = int(os.getenv(MAX_OPS_LONG, 2))
 strategy = int(os.getenv("STRATEGY", 1))
-
+sr_fib_tolerancia = float(os.getenv("SR_FIB_TOLERANCIA", 0.005))
 config_lock = threading.Lock()
 
 opened_positions = [];
@@ -60,7 +60,7 @@ def reload_config():
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions, opened_positions_short, opened_positions_long
-    global max_ops_short, max_ops_long, strategy
+    global max_ops_short, max_ops_long, strategy, sr_fib_tolerancia
 
 
     config_path = '.env'
@@ -98,6 +98,7 @@ def reload_config():
         max_ops_long = int(os.getenv(MAX_OPS_LONG, 2))
 
         strategy = int(os.getenv("STRATEGY", 1))
+        sr_fib_tolerancia = float(os.getenv("SR_FIB_TOLERANCIA", 0.005))
 
     except ValueError as e:
         print(f"Error al convertir una variable de entorno: {e}")

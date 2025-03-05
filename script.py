@@ -786,7 +786,7 @@ def operar6(simbolos):
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions_long, opened_positions_short
-    global max_ops_long, max_ops_short
+    global max_ops_long, max_ops_short, sr_fib_tolerancia
 
     logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
 
@@ -858,8 +858,8 @@ def operar6(simbolos):
                     precio = float(ticker['result']['list'][0]['lastPrice'])
                     price24hPcnt = float(ticker['result']['list'][0]['price24hPcnt']) * 100
                     
-                    patron_confirmado_bajista, cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib = confirmar_patron_con_soporte_resistencia(df, 'bajista')
-                    patron_confirmado_alcista, cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib = confirmar_patron_con_soporte_resistencia(df, 'alcista')
+                    patron_confirmado_bajista, cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib = confirmar_patron_con_soporte_resistencia(df, 'bajista', 200, sr_fib_tolerancia)
+                    patron_confirmado_alcista, cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib = confirmar_patron_con_soporte_resistencia(df, 'alcista', 200, sr_fib_tolerancia)
 
                     rsi = talib.RSI(close_prices, timeperiod=14)
 

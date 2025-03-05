@@ -2,6 +2,7 @@ import pandas as pd
 from dotenv import load_dotenv
 import numpy as np
 import talib
+from config import test_mode
 
 def calcular_rsi_talib(closes, window=14):
     rsi = talib.RSI(np.array(closes), timeperiod=window)
@@ -261,7 +262,7 @@ def is_strong_bearish_signal(open_prices, high_prices, low_prices, close_prices)
 
 
 # Función para detectar soportes y resistencias
-def detectar_soportes_resistencias6(df, window=50):
+def detectar_soportes_resistencias6(symbol, df, window=50):
     """
     Detecta soportes y resistencias utilizando los máximos y mínimos de un periodo de tiempo.
     :param df: DataFrame con columnas ['high', 'low']
@@ -284,7 +285,7 @@ def detectar_soportes_resistencias6(df, window=50):
     return soportes, resistencias
 
 # Función para analizar el volumen
-def confirmar_volumen6(df, window=20):
+def confirmar_volumen6(symbol, df, window=20):
     """
     Compara el volumen de la vela actual con el promedio de los últimos 'window' períodos.
     :param df: DataFrame con columna 'volume'
@@ -293,12 +294,13 @@ def confirmar_volumen6(df, window=20):
     """
     df['avg_volume'] = df['volume'].rolling(window).mean()
     df['volumen_en_aumento'] = df['volume'] > df['avg_volume']
+    print(f"{symbol} avg_volume: {df['avg_volume']} | volume: { df['volume']} |  volumen_en_aumento: {df['volumen_en_aumento'].iloc[-1]}\n")
 
     # Ver si el volumen actual es mayor al promedio
     return df['volumen_en_aumento'].iloc[-1]
 
 # Función para calcular los niveles de Fibonacci
-def fibonacci_retracement6(df):
+def fibonacci_retracement6(symbol, df):
     """
     Calcula los niveles de Fibonacci de un movimiento entre el máximo y el mínimo reciente.
     :param df: DataFrame con las columnas 'high' y 'low'
@@ -322,11 +324,20 @@ def fibonacci_retracement6(df):
 def esta_cerca(precio, niveles, tolerancia=0.01):  # 1% de tolerancia
     return any(abs(precio - nivel) <= nivel * tolerancia for nivel in niveles)
 
-def confirmar_patron_con_soporte_resistencia(df, patron_ultimo, window=50, tolerancia=0.01):
+def confirmar_patron_con_soporte_resistencia(symbol, df, patron_ultimo, window=50, tolerancia=0.01):
+    global test_mode
     # Detectamos soportes y resistencias
-    soportes, resistencias = detectar_soportes_resistencias6(df, window)
-    volumen_aumento = confirmar_volumen6(df)
-    niveles_fib = fibonacci_retracement6(df)
+
+    soportes, resistencias = detectar_soportes_resistencias6(symbol, df, window)
+    volumen_aumento = confirmar_volumen6(symbol,df)
+    niveles_fib = fibonacci_retracement6(symbol, df)
+
+    if test_mode == 1:
+        print(f"{symbol} ultimo_precio: {df['close'].iloc[-1]}\n")
+        print(f"{symbol} Soportes: {soportes}\n")
+        print(f"{symbol} Resistencias: {resistencias}\n")
+        print(f"{symbol} volumen_aumento: {volumen_aumento}\n")
+        print(f"{symbol} niveles_fib: {niveles_fib}\n")
     
     # Último precio de cierre
     ultimo_precio = df['close'].iloc[-1]

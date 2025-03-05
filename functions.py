@@ -182,24 +182,30 @@ def qty_step(price, symbol):
     return result
 
 def crear_orden(symbol, side, order_type, qty):
+    global test_mode
     try:
-        response = client.place_order(
-            category="linear",
-            symbol=symbol,
-            side=side,
-            orderType=order_type,
-            qty=qty,
-            timeInForce="GoodTillCancel"
-        )
-        logger("Orden creada con exito:" + str(response))
+        if test_mode == 0:
+            response = client.place_order(
+                category="linear",
+                symbol=symbol,
+                side=side,
+                orderType=order_type,
+                qty=qty,
+                timeInForce="GoodTillCancel"
+            )
+            logger("{test_mode} Orden creada con exito:" + str(response))
+        else:
+            logger(f"Test mode activado. No se creará la orden en symbol: {symbol}, side: {side}, order_type: {order_type}, qty: {qty}")
 
-        # time.sleep(1)
-        # establecer_st_tp(symbol)
+            # time.sleep(1)
+            # establecer_st_tp(symbol)
 
     except Exception as e:
-        logger(f"Error al crear la orden: {e}")
+        logger(f"{test_mode} Error al crear la orden: {e}")
 
 def establecer_st_tp(symbol):
+    global test_mode
+
     limit = 10
     while True:
         limit -= 1
@@ -226,15 +232,19 @@ def establecer_st_tp(symbol):
 
                     break
         except Exception as e:
-            logger(f"{symbol} {limit} Error al establecer stop loss y take profit: {e}")                   
+            logger(f"{test_mode} {symbol} {limit} Error al establecer stop loss y take profit: {e}")                   
 
         if limit == 0:
             break
 
 def establecer_stop_loss(symbol, sl):
-
+    global test_mode
     try:
         sl = qty_step(sl,symbol)
+
+        if test_mode == 1:
+            logger(f"Test mode activado. No se establecerá el stop loss en {symbol} en {sl}")
+            return None
 
         order = client.set_trading_stop(
             category="linear",
@@ -247,10 +257,12 @@ def establecer_stop_loss(symbol, sl):
         logger(f"{symbol} Stop loss establecido en {sl}")
         return order
     except Exception as e:
-        logger(f"{symbol} Error al establecer el stop loss: {e}")
+        logger(f"{test_mode} {symbol} Error al establecer el stop loss: {e}")
         return None
 
 def establecer_take_profit(symbol, tp, side):
+    global test_mode
+    
     datam = obtener_datos_historicos(symbol, timeframe)
     ema_20 = calcular_ema(datam[4], ventana=20)
 
@@ -265,6 +277,10 @@ def establecer_take_profit(symbol, tp, side):
             price = price_tp
 
     try:
+        if test_mode == 1:
+            logger(f"Test mode activado. No se establecerá el take profit en {symbol} en {price}")
+            return None
+
         # Establecer el take profit en la posición
         order = client.set_trading_stop(
             category="linear",
@@ -277,15 +293,19 @@ def establecer_take_profit(symbol, tp, side):
         logger(f"{symbol} Take profit establecido a {price}")
         return order
     except Exception as e:
-        logger(f"{symbol} Error al establecer el take profit: {e}")
+        logger(f"{test_mode} {symbol} Error al establecer el take profit: {e}")
         return None
 
 
 
 def establecer_stop_loss2(symbol, sl):
-
+    global test_mode
     try:
         sl = qty_step(sl,symbol)
+
+        if test_mode == 1:
+            logger(f"Test mode activado. No se establecerá el stop loss en {symbol} en {sl}")
+            return None
 
         order = client.set_trading_stop(
             category="linear",
@@ -298,13 +318,18 @@ def establecer_stop_loss2(symbol, sl):
         logger(f"{symbol} Stop loss establecido en {sl}")
         return order
     except Exception as e:
-        logger(f"{symbol} Error al establecer el stop loss: {e}")
+        logger(f"{test_mode} {symbol} Error al establecer el stop loss: {e}")
         return None
 
 def establecer_take_profit2(symbol, tp, side):
+    global test_mode
     price_tp = qty_step(tp,symbol)
 
     try:
+        if test_mode == 1:
+            logger(f"Test mode activado. No se establecerá el take profit2 en {symbol} en {price_tp}")
+            return None
+
         # Establecer el take profit en la posición
         order = client.set_trading_stop(
             category="linear",
@@ -317,11 +342,12 @@ def establecer_take_profit2(symbol, tp, side):
         logger(f"{symbol} Take profit establecido a {price_tp}")
         return order
     except Exception as e:
-        logger(f"{symbol} Error al establecer el take profit: {e}")
+        logger(f"{test_mode} {symbol} Error al establecer el take profit: {e}")
         return None
 
 
 def establecer_trailing_stop(symbol, tp, side, qty, callback_ratio=1):
+    global test_mode
 
     datam = obtener_datos_historicos(symbol, timeframe)
     ema_20 = calcular_ema(datam[4], ventana=20)
@@ -337,6 +363,10 @@ def establecer_trailing_stop(symbol, tp, side, qty, callback_ratio=1):
             trigger_price = price_tp
 
     try:
+        if test_mode == 1:
+            logger(f"Test mode activado. No se establecerá el trailing stop en {symbol} en {trigger_price}")
+            return None
+
         # Establecer el take profit en la posición
         order = client.place_order(
             category="linear",
@@ -351,10 +381,10 @@ def establecer_trailing_stop(symbol, tp, side, qty, callback_ratio=1):
         )
 
 
-        logger(f"Trailing stop establecido para {symbol} a {trigger_price}")
+        logger(f"{test_mode} Trailing stop establecido para {symbol} a {trigger_price}")
         return order
     except Exception as e:
-        logger(f"Error al establecer el trailing stop para {symbol}: {e}")
+        logger(f"{test_mode} Error al establecer el trailing stop para {symbol}: {e}")
         return None
 
 
@@ -366,27 +396,28 @@ def check_opened_positions(opened_positions):
         time.sleep(60)
 
 def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, rsi_init_data):
+    global test_mode
 
     rsi = rsi_init_data
     max_min_rsi = rsi_init_data
 
     while True:
         try:
-            logger(f"analizar_posible_orden en {symbol} - {side} - {order_type} - {qty} - {bollinger_init_data['UpperBand']} -  {bollinger_init_data['LowerBand']} -  {bollinger_init_data['MA']} -  {bollinger_init_data['BB_Width_%']} - RSI INICIAL: {rsi_init_data} - RSI ACTUAL{(rsi)}")
+            logger(f"{test_mode} analizar_posible_orden en {symbol} - {side} - {order_type} - {qty} - {bollinger_init_data['UpperBand']} -  {bollinger_init_data['LowerBand']} -  {bollinger_init_data['MA']} -  {bollinger_init_data['BB_Width_%']} - RSI INICIAL: {rsi_init_data} - RSI ACTUAL{(rsi)}")
             if not verificar_posicion_abierta(symbol):
-                logger(f"analizar_posible_orden en {symbol} - No hay posiciones abiertas en {symbol}")
+                logger(f"{test_mode} analizar_posible_orden en {symbol} - No hay posiciones abiertas en {symbol}")
                 datam = obtener_datos_historicos(symbol, timeframe)
                 bollinger = calcular_bandas_bollinger(datam)
                 rsi = calcular_rsi_talib(datam[4])
 
                 bb_width = bollinger['BB_Width_%']
                 if bb_width < Bollinger_bands_width:
-                    logger(f"analizar_posible_orden en {symbol} - bb_width {bb_width} - Bollinger_bands_width {Bollinger_bands_width}")
+                    logger(f"{test_mode} analizar_posible_orden en {symbol} - bb_width {bb_width} - Bollinger_bands_width {Bollinger_bands_width}")
                     time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                     continue;
                     
                 if rsi > 45 and rsi < 55:
-                    logger(f"analizar_posible_orden en {symbol} - RSI en instancias medias {rsi} salgo del analisis.")
+                    logger(f"{test_mode} analizar_posible_orden en {symbol} - RSI en instancias medias {rsi} salgo del analisis.")
                     break
 
                 if side == "Sell": # bollineger y RSI altos
@@ -397,7 +428,7 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
                     if (bollinger['UpperBand'] < bollinger_init_data['UpperBand']) or (rsi_limit < max_min_rsi):
                         actual_bb = bollinger['LowerBand']
                         inicial_bb = bollinger_init_data['LowerBand']
-                        logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty} - rsi {rsi} - rsi_limit {rsi_limit} - rsi_init_data {rsi_init_data} - actual_bb {actual_bb} - inicial_bb {inicial_bb}")
+                        logger(f"{test_mode} analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty} - rsi {rsi} - rsi_limit {rsi_limit} - rsi_init_data {rsi_init_data} - actual_bb {actual_bb} - inicial_bb {inicial_bb}")
                         crear_orden(symbol, side, order_type, qty)
 
                         if monitoring == 1:
@@ -408,7 +439,7 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
 
                         break
                     else:
-                        logger(f"analizar_posible_orden en {symbol} - SELL RSI en {symbol} rsi_limit: {rsi_limit} es mayor a max_min_rsi: {max_min_rsi} - rsi_init_data: {rsi_init_data} - Actual UB: {bollinger['UpperBand']} - Inicial UB: {bollinger_init_data['UpperBand']}")
+                        logger(f"{test_mode} analizar_posible_orden en {symbol} - SELL RSI en {symbol} rsi_limit: {rsi_limit} es mayor a max_min_rsi: {max_min_rsi} - rsi_init_data: {rsi_init_data} - Actual UB: {bollinger['UpperBand']} - Inicial UB: {bollinger_init_data['UpperBand']}")
 
                 else:
 
@@ -432,15 +463,16 @@ def analizar_posible_orden(symbol, side, order_type, qty, bollinger_init_data, r
                        logger(f"analizar_posible_orden en {symbol} - BUY RSI en {symbol} rsi_limit: {rsi_limit} es menor a max_min_rsi: {max_min_rsi} - rsi_init_data: {rsi_init_data} - Actual LB: {bollinger['LowerBand']} - Inicial LB: {bollinger_init_data['LowerBand']}")
 
             else:
-                logger(f"analizar_posible_orden en {symbol} - Ya hay una posición abierta en {symbol}")
+                logger(f"{test_mode} analizar_posible_orden en {symbol} - Ya hay una posición abierta en {symbol}")
                 break
         except Exception as e:
-            logger(f"analizar_posible_orden en {symbol} - Error al analizar posible orden en {symbol}: {e}")
+            logger(f"{test_mode} analizar_posible_orden en {symbol} - Error al analizar posible orden en {symbol}: {e}")
             break
 
         time.sleep(20)
 
 def analizar_posible_orden_macd_syr(symbol, side, order_type, qty, bollinger_init_data, rsi_init_data):
+    global test_mode
 
     rsi = rsi_init_data
     max_min_rsi = rsi_init_data
@@ -483,7 +515,7 @@ def analizar_posible_orden_macd_syr(symbol, side, order_type, qty, bollinger_ini
 
                     # si macd da senal bajista entrol
                     if macd_bajista(np.array(datam[4])):
-                        logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty}")
+                        logger(f"{test_mode} analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty}")
                         crear_orden(symbol, side, order_type, qty)
 
                         if monitoring == 1:
@@ -494,7 +526,7 @@ def analizar_posible_orden_macd_syr(symbol, side, order_type, qty, bollinger_ini
 
                         break
                     else:
-                        logger(f"analizar_posible_orden en {symbol} - SELL RSI en {symbol} rsi_limit: {rsi_limit} es mayor a max_min_rsi: {max_min_rsi} - rsi_init_data: {rsi_init_data} - Actual UB: {bollinger['UpperBand']} - Inicial UB: {bollinger_init_data['UpperBand']}")
+                        logger(f"{test_mode} analizar_posible_orden en {symbol} - SELL RSI en {symbol} rsi_limit: {rsi_limit} es mayor a max_min_rsi: {max_min_rsi} - rsi_init_data: {rsi_init_data} - Actual UB: {bollinger['UpperBand']} - Inicial UB: {bollinger_init_data['UpperBand']}")
 
                 else:
 
@@ -526,18 +558,19 @@ def analizar_posible_orden_macd_syr(symbol, side, order_type, qty, bollinger_ini
 
 
 def analizar_posible_orden_patron_velas(symbol, side, order_type, qty, bollinger_init_data, rsi_init_data):
-    global opened_positions, monitoring
+    global opened_positions, monitoring, test_mode
+
     rsi = rsi_init_data
 
     while True:
         try:
             if len(opened_positions) >= max_ops:
-                logger(f"analizar_posible_orden - Se alcanzó el límite de posiciones abiertas | {max_ops}.")
+                logger(f"{test_mode} analizar_posible_orden - Se alcanzó el límite de posiciones abiertas | {max_ops}.")
                 break
             
             logger(f"analizar_posible_orden en {symbol} - {side} - {order_type} - {qty} - {bollinger_init_data['UpperBand']} -  {bollinger_init_data['LowerBand']} -  {bollinger_init_data['MA']} -  {bollinger_init_data['BB_Width_%']} - RSI INICIAL: {rsi_init_data} - RSI ACTUAL{(rsi)}")
             if not verificar_posicion_abierta(symbol):
-                logger(f"analizar_posible_orden en {symbol} - No hay posiciones abiertas en {symbol}")
+                logger(f"{test_mode} analizar_posible_orden en {symbol} - No hay posiciones abiertas en {symbol}")
                 datam = obtener_datos_historicos(symbol, timeframe)
                 open_prices = np.array(datam[1])
                 high_prices = np.array(datam[2])
@@ -549,13 +582,13 @@ def analizar_posible_orden_patron_velas(symbol, side, order_type, qty, bollinger
                 momento_bajista = patron_velas_bajistas(open_prices, high_prices, low_prices, close_prices)
 
                 if rsi > 45 and rsi < 55:
-                    logger(f"analizar_posible_orden en {symbol} - RSI en instancias medias {rsi} salgo del analisis.")
+                    logger(f"{test_mode} analizar_posible_orden en {symbol} - RSI en instancias medias {rsi} salgo del analisis.")
                     break
                     
                 if side == "Sell":
 
                     if momento_bajista:
-                        logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty} - rsi {rsi}")
+                        logger(f"{test_mode} analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty} - rsi {rsi}")
                         crear_orden(symbol, side, order_type, qty)
 
                         if monitoring == 1:
@@ -569,7 +602,7 @@ def analizar_posible_orden_patron_velas(symbol, side, order_type, qty, bollinger
                 else:
 
                     if momento_alcista:
-                        logger(f"analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty}  - rsi {rsi}")
+                        logger(f"{test_mode} analizar_posible_orden en {symbol} - Creando orden en {symbol} - {side} - {order_type} - {qty}  - rsi {rsi}")
                         crear_orden(symbol, side, order_type, qty)
                         if monitoring == 1:
                             # Iniciar el monitoreo de la operación
@@ -577,109 +610,116 @@ def analizar_posible_orden_patron_velas(symbol, side, order_type, qty, bollinger
                             hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, side, qty))
                             hilo_monitoreo.start()
                     else:
-                        logger(f"analizar_posible_orden en {symbol} - No se detecta un patrón alcista en {symbol}") 
+                        logger(f"{test_mode} analizar_posible_orden en {symbol} - No se detecta un patrón alcista en {symbol}") 
 
             else:
-                logger(f"analizar_posible_orden en {symbol} - Ya hay una posición abierta en {symbol}")
+                logger(f"{test_mode} analizar_posible_orden en {symbol} - Ya hay una posición abierta en {symbol}")
                 break
         except Exception as e:
-            logger(f"analizar_posible_orden en {symbol} - Error al analizar posible orden en {symbol}: {e}")
+            logger(f"{test_mode} analizar_posible_orden en {symbol} - Error al analizar posible orden en {symbol}: {e}")
             break
 
         time.sleep(random.randint(int(sleep_rand_from/4), int(sleep_rand_to/4)))
 
 
 def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):
+    global test_mode
+
     pe = precio_entrada
     while True:
         try:
             posiciones = client.get_positions(category="linear", symbol=symbol)
             if float(posiciones['result']['list'][0]['size']) != 0:
                 precio_actual = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
-                logger(f"monitorear_operaciones_abiertas {symbol} - Precio actual: {precio_actual} - Precio de entrada: {precio_entrada}")
+                logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} - Precio actual: {precio_actual} - Precio de entrada: {precio_entrada}")
                 if side == 'Buy':
                     if precio_actual > (pe * 1.005):
                         nuevo_stop_loss = precio_actual * (1 - sl_callback_percentage / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
                         pe = precio_actual
-                        logger(f"monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Buy")
+                        logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Buy")
                 else:
                     if precio_actual < (pe * 0.995):
                         nuevo_stop_loss = precio_actual * (1 + sl_callback_percentage / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
                         pe = precio_actual
-                        logger(f"monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Sell")
+                        logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Sell")
             else:
-                logger(f"monitorear_operaciones_abiertas {symbol} No hay posiciones abiertas en {symbol}. Saliendo del monitoreo.")
+                logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} No hay posiciones abiertas en {symbol}. Saliendo del monitoreo.")
                 break
 
             time.sleep(random.randint(int(sleep_rand_from/4), int(sleep_rand_to/4)))
         except Exception as e:
-            logger(f"monitorear_operaciones_abiertas {symbol} Error al monitorear la operación en {symbol}: {e}")
+            logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Error al monitorear la operación en {symbol}: {e}")
             break
 
 
 
 def monitorear_operaciones_abierta_macd_syr(symbol, precio_entrada, side, qty):
+    global test_mode
+
     pe = precio_entrada
     while True:
         try:
             posiciones = client.get_positions(category="linear", symbol=symbol)
             if float(posiciones['result']['list'][0]['size']) != 0:
                 precio_actual = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
-                logger(f"monitorear_operaciones_abiertas {symbol} - Precio actual: {precio_actual} - Precio de entrada: {precio_entrada}")
+                logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} - Precio actual: {precio_actual} - Precio de entrada: {precio_entrada}")
                 if side == 'Buy':
                     if precio_actual > pe:
                         nuevo_stop_loss = precio_actual * (1 - sl_callback_percentage / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
                         pe = precio_actual
-                        logger(f"monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Buy")
+                        logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Buy")
                 else:
                     if precio_actual < pe:
                         nuevo_stop_loss = precio_actual * (1 + sl_callback_percentage / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
                         pe = precio_actual
-                        logger(f"monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Sell")
+                        logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Sell")
             else:
-                logger(f"monitorear_operaciones_abiertas {symbol} No hay posiciones abiertas en {symbol}. Saliendo del monitoreo.")
+                logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} No hay posiciones abiertas en {symbol}. Saliendo del monitoreo.")
                 break
 
             time.sleep(random.randint(int(sleep_rand_from/4), int(sleep_rand_to/4)))
         except Exception as e:
-            logger(f"monitorear_operaciones_abiertas {symbol} Error al monitorear la operación en {symbol}: {e}")
+            logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Error al monitorear la operación en {symbol}: {e}")
             break
 
 def monitorear_operaciones_abiertas_macd(symbol, precio_entrada, side, qty):
+    global test_mode
+
     pe = precio_entrada
     while True:
         try:
             posiciones = client.get_positions(category="linear", symbol=symbol)
             if float(posiciones['result']['list'][0]['size']) != 0:
                 precio_actual = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
-                logger(f"monitorear_operaciones_abiertas {symbol} - Precio actual: {precio_actual} - Precio de entrada: {precio_entrada}")
+                logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} - Precio actual: {precio_actual} - Precio de entrada: {precio_entrada}")
                 if side == 'Buy':
                     if precio_actual > pe:
                         nuevo_stop_loss = precio_actual * (1 - sl_callback_percentage / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
                         pe = precio_actual
-                        logger(f"monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Buy")
+                        logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Buy")
                 else:
                     if precio_actual < pe:
                         nuevo_stop_loss = precio_actual * (1 + sl_callback_percentage / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
                         pe = precio_actual
-                        logger(f"monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Sell")
+                        logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Sell")
             else:
-                logger(f"monitorear_operaciones_abiertas {symbol} No hay posiciones abiertas en {symbol}. Saliendo del monitoreo.")
+                logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} No hay posiciones abiertas en {symbol}. Saliendo del monitoreo.")
                 break
 
             time.sleep(random.randint(int(sleep_rand_from/4), int(sleep_rand_to/4)))
         except Exception as e:
-            logger(f"monitorear_operaciones_abiertas {symbol} Error al monitorear la operación en {symbol}: {e}")
+            logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Error al monitorear la operación en {symbol}: {e}")
             break
 
 
 def get_opened_positions(symbol):
+    global test_mode
     global opened_positions_long, opened_positions_short
 
     try:
@@ -703,14 +743,14 @@ def get_opened_positions(symbol):
 
 
     except Exception as e:
-        logger(f"get_opened_positions Error al obtener las posiciones abiertas: {e}")
-        print(f"Error al obtener las posiciones abiertas: {e}")
+        logger(f"{test_mode} get_opened_positions Error al obtener las posiciones abiertas: {e}")
 
 
 def logger(log_message,aditional_text=""):
+    global timeframe, test_mode
     log_path = f"logs/log-{timeframe}-{time.strftime('%Y%m%d')}.txt"
     with open(log_path, "a") as log_file:
-        log_file.write(str(timeframe) + '|' + time.strftime('%Y-%m-%d %H:%M:%S') + " " + log_message + " " + aditional_text + "\n")
+        log_file.write(str(timeframe) + '|' + str(test_mode) + '|' + time.strftime('%Y-%m-%d %H:%M:%S') + " " + log_message + " " + aditional_text + "\n")
 
 
 def t_logger(log_message,aditional_text=""):

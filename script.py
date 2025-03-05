@@ -32,7 +32,7 @@ def operar(simbolos):
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions_long, opened_positions_short
-    global max_ops_long, max_ops_short
+    global max_ops_long, max_ops_short, account_usdt_limit
 
     logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
 
@@ -144,7 +144,7 @@ def operar(simbolos):
 
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
-                        if saldo_usdt < 10:
+                        if saldo_usdt < account_usdt_limit:
                             time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                             continue
 
@@ -171,7 +171,7 @@ def operar(simbolos):
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
 
-                        if saldo_usdt < 10:
+                        if saldo_usdt < account_usdt_limit:
                             continue
 
                         precision = precision_step
@@ -196,7 +196,7 @@ def operar2(simbolos):
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions_long, opened_positions_short
-    global max_ops_long, max_ops_short
+    global max_ops_long, max_ops_short,account_usdt_limit
 
     logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
 
@@ -280,7 +280,7 @@ def operar2(simbolos):
 
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
-                        if saldo_usdt < 10:
+                        if saldo_usdt < account_usdt_limit:
                             time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                             continue
 
@@ -311,7 +311,7 @@ def operar2(simbolos):
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
 
-                        if saldo_usdt < 10:
+                        if saldo_usdt < account_usdt_limit:
                             continue
 
                         precision = precision_step
@@ -340,7 +340,7 @@ def operar3(simbolos):
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions_long, opened_positions_short
-    global max_ops_long, max_ops_short
+    global max_ops_long, max_ops_short,account_usdt_limit
 
     logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
 
@@ -438,7 +438,7 @@ def operar3(simbolos):
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
                         logger(f"saldo_usdt: {saldo_usdt} usdt: {usdt}")
-                        if saldo_usdt < 10:
+                        if saldo_usdt < account_usdt_limit:
                             time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                             continue
 
@@ -465,7 +465,7 @@ def operar3(simbolos):
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
                         logger(f"saldo_usdt: {saldo_usdt} usdt: {usdt}")
-                        if saldo_usdt < 10:
+                        if saldo_usdt < account_usdt_limit:
                             continue
 
                         precision = precision_step
@@ -489,7 +489,7 @@ def operar4(simbolos):
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions_long, opened_positions_short
-    global max_ops_long, max_ops_short
+    global max_ops_long, max_ops_short,account_usdt_limit
 
     logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
 
@@ -576,7 +576,7 @@ def operar4(simbolos):
 
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
-                        if saldo_usdt < 10:
+                        if saldo_usdt < account_usdt_limit:
                             time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                             continue
 
@@ -609,7 +609,7 @@ def operar4(simbolos):
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
 
-                        if saldo_usdt < 10:
+                        if saldo_usdt < account_usdt_limit:
                             continue
 
                         precision = precision_step
@@ -640,7 +640,7 @@ def operar5(simbolos):
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions_long, opened_positions_short
-    global max_ops_long, max_ops_short
+    global max_ops_long, max_ops_short,account_usdt_limit
 
     logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
 
@@ -724,7 +724,7 @@ def operar5(simbolos):
 
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
-                        if saldo_usdt < 10:
+                        if saldo_usdt < account_usdt_limit:
                             time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                             continue
 
@@ -755,7 +755,7 @@ def operar5(simbolos):
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
 
-                        if saldo_usdt < 10:
+                        if saldo_usdt < account_usdt_limit:
                             continue
 
                         precision = precision_step
@@ -786,7 +786,7 @@ def operar6(simbolos):
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions_long, opened_positions_short
-    global max_ops_long, max_ops_short, sr_fib_tolerancia
+    global max_ops_long, max_ops_short, sr_fib_tolerancia, sr_fib_velas,account_usdt_limit
 
     logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
 
@@ -845,6 +845,13 @@ def operar6(simbolos):
                     close_prices = np.array(datam[4])
                     volumes = np.array(datam[5])
 
+                    data = calcular_bandas_bollinger(datam)
+                    bb_width = data['BB_Width_%']
+                    if bb_width < Bollinger_bands_width:
+                        time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                        continue;
+                        
+
                     # Crear un DataFrame de pandas con los datos
                     df = pd.DataFrame({
                         'open': open_prices,
@@ -858,8 +865,8 @@ def operar6(simbolos):
                     precio = float(ticker['result']['list'][0]['lastPrice'])
                     price24hPcnt = float(ticker['result']['list'][0]['price24hPcnt']) * 100
                     
-                    patron_confirmado_bajista, cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib = confirmar_patron_con_soporte_resistencia(df, 'bajista', 200, sr_fib_tolerancia)
-                    patron_confirmado_alcista, cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib = confirmar_patron_con_soporte_resistencia(df, 'alcista', 200, sr_fib_tolerancia)
+                    patron_confirmado_bajista, cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib = confirmar_patron_con_soporte_resistencia(symbol, df, 'bajista', sr_fib_velas, sr_fib_tolerancia)
+                    patron_confirmado_alcista, cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib = confirmar_patron_con_soporte_resistencia(symbol, df, 'alcista', sr_fib_velas, sr_fib_tolerancia)
 
                     rsi = talib.RSI(close_prices, timeperiod=14)
 
@@ -880,7 +887,7 @@ def operar6(simbolos):
 
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
-                        if saldo_usdt < 10:
+                        if saldo_usdt < account_usdt_limit:
                             time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                             continue
 
@@ -911,7 +918,7 @@ def operar6(simbolos):
                         saldo_usdt = obtener_saldo_usdt()
                         usdt = saldo_usdt * (account_percentage / 100)
 
-                        if saldo_usdt < 10:
+                        if saldo_usdt < account_usdt_limit:
                             continue
 
                         precision = precision_step

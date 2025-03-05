@@ -33,6 +33,8 @@ sl_porcent = float(os.getenv(SL_PORCENT, 1))
 
 cnt_symbols = int(os.getenv(CNT_SYMBOLS, 20))
 account_percentage = int(os.getenv(ACCOUNT_PERCENTAGE, 4))
+account_usdt_limit = int(os.getenv("ACCOUNT_USDT_LIMIT", 10))
+
 top_rsi = int(os.getenv(TOP_RSI, 87))
 bottom_rsi = int(os.getenv(BOTTOM_RSI, 13))
 
@@ -48,6 +50,11 @@ max_ops_short = int(os.getenv(MAX_OPS_SHORT, 2))
 max_ops_long = int(os.getenv(MAX_OPS_LONG, 2))
 strategy = int(os.getenv("STRATEGY", 1))
 sr_fib_tolerancia = float(os.getenv("SR_FIB_TOLERANCIA", 0.005))
+sr_fib_velas = int(os.getenv("SR_FIB_VELAS", 50))
+
+test_mode = int(os.getenv("TEST_MODE", 0))
+
+
 config_lock = threading.Lock()
 
 opened_positions = [];
@@ -60,7 +67,7 @@ def reload_config():
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions, opened_positions_short, opened_positions_long
-    global max_ops_short, max_ops_long, strategy, sr_fib_tolerancia
+    global max_ops_short, max_ops_long, strategy, sr_fib_tolerancia, test_mode, sr_fib_velas, account_usdt_limit
 
 
     config_path = '.env'
@@ -76,6 +83,8 @@ def reload_config():
     try:
         api_key = os.getenv(API_KEY)
         api_secret = os.getenv(API_SECRET)
+        test_mode = float(os.getenv("TEST_MODE", 0))
+
         timeframe = int(os.getenv(TIMEFRAME, "5"))
 
         tp_porcent = float(os.getenv(TP_PORCENT, 2))
@@ -83,6 +92,8 @@ def reload_config():
 
         cnt_symbols = int(os.getenv(CNT_SYMBOLS, 20))
         account_percentage = int(os.getenv(ACCOUNT_PERCENTAGE, 4))
+        account_usdt_limit = int(os.getenv("ACCOUNT_USDT_LIMIT", 10))
+
         top_rsi = int(os.getenv(TOP_RSI, 87))
         bottom_rsi = int(os.getenv(BOTTOM_RSI, 13))
 
@@ -98,7 +109,8 @@ def reload_config():
         max_ops_long = int(os.getenv(MAX_OPS_LONG, 2))
 
         strategy = int(os.getenv("STRATEGY", 1))
-        sr_fib_tolerancia = float(os.getenv("SR_FIB_TOLERANCIA", 0.005))
+        sr_fib_tolerancia = int(os.getenv("SR_FIB_TOLERANCIA", 0.005))
+        sr_fib_velas = int(os.getenv("SR_FIB_VELAS", 50))
 
     except ValueError as e:
         print(f"Error al convertir una variable de entorno: {e}")

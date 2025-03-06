@@ -434,8 +434,8 @@ def confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, patron_ultimo,
    
     volumen_aumento = confirmar_volumen6(symbol,df)
     niveles_fib = fibonacci_retracement6(symbol, df)
-    price_in_bollinger_upper = abs(bb['UpperBand'] - df['close'].iloc[-1]) <= bb['UpperBand'] * tolerancia
-    price_in_bollinger_lower = abs(bb['LowerBand'] - df['close'].iloc[-1]) <= bb['LowerBand'] * tolerancia
+    price_in_bollinger_upper = abs(bb['UpperBand'] - df['close'].iloc[-1]) <= bb['UpperBand'] * tolerancia or df['close'].iloc[-1] > bb['UpperBand']
+    price_in_bollinger_lower = abs(bb['LowerBand'] - df['close'].iloc[-1]) <= bb['LowerBand'] * tolerancia or df['close'].iloc[-1] < bb['LowerBand']
 
 
 

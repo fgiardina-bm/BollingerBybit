@@ -839,10 +839,7 @@ def get_soportes_resistencia(symbol, frame1="240", frame2="D", frame3="W", limit
 
     return soportes_cercanos, resistencias_cercanas, valor_actual, soportes_todas, resistencias_todas
 
-exchange = ccxt.binance({
-    'enableRateLimit': True,
-    'options': {'defaultType': 'future'}  # Esto especifica que quieres usar el mercado de futuros
-})
+
 
 def obtener_orderbook_binance(symbol: str, limite: int = 1000):
     """
@@ -856,6 +853,12 @@ def obtener_orderbook_binance(symbol: str, limite: int = 1000):
     - bids: Lista de órdenes de compra [[precio, volumen], ...]
     - asks: Lista de órdenes de venta [[precio, volumen], ...]
     """
+
+    exchange = ccxt.binance({
+        'enableRateLimit': True,
+        'options': {'defaultType': 'future'}  # Esto especifica que quieres usar el mercado de futuros
+    })
+
     try:
         order_book = exchange.fetch_order_book(symbol.replace('USDT', '/USDT'), limit=limite)
         bids = order_book['bids']  # Órdenes de compra [[precio, volumen]]

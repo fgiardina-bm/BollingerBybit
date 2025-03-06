@@ -948,7 +948,7 @@ def operar7(simbolos,sr):
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions_long, opened_positions_short
-    global max_ops_long, max_ops_short, sr_fib_tolerancia, sr_fib_velas,account_usdt_limit, order_book_limit
+    global max_ops_long, max_ops_short, sr_fib_tolerancia, sr_fib_velas,account_usdt_limit, order_book_limit, order_book_delay_divisor
 
     logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
 
@@ -1040,28 +1040,13 @@ def operar7(simbolos,sr):
 
                     rsi = talib.RSI(close_prices, timeperiod=14)
 
-
-                    if bucle_cnt == 1 or bucle_cnt % 10 == 0:
-                        bids, asks = obtener_orderbook_binance(symbol, order_book_limit)
-                        acum_compras, volumen_ventas, volumen_compras = hay_acumulacion_compras(symbol, precio, bids, asks)
-                        acum_ventas, volumen_ventas, volumen_compras = hay_acumulacion_ventas(symbol, precio, bids, asks)
-                    else:
-                        acum_compras = acum_compras if 'acum_compras' in locals() else False
-                        acum_ventas = acum_ventas if 'acum_ventas' in locals() else False
-                        volumen_ventas = volumen_ventas if 'volumen_ventas' in locals() else 0
-                        volumen_compras = volumen_compras if 'volumen_compras' in locals() else 0
-                        bids = bids if 'bids' in locals() else []
-                        asks = asks if 'asks' in locals() else []
-
-
-                    delta_acum_volume = volumen_compras - volumen_ventas
-                    # delta_volume_pct = (delta_volume / (buy_volume + sell_volume)) * 100 if (buy_volume + sell_volume) != 0 else 0
-                    delta_volume_pct = (delta_acum_volume / (volumen_ventas + volumen_compras)) * 100 if (volumen_ventas + volumen_compras) != 0 else 0
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<3.5f}\trsi: {rsi[-1]:<3.0f}\tb: {patron_confirmado_bajista}\ta: {patron_confirmado_alcista}\ts:{cerca_soporte},r:{cerca_resistencia},v:{volumen_aumento}\t{bucle_cnt} | bv:{volumen_compras:<5.0f},sv:{volumen_ventas:<5.0f},dv:{delta_volume_pct:.0f}%"
+                    # delta_acum_volume = volumen_compras - volumen_ventas
+                    delta_volume_pct = (delta_volume / (buy_volume + sell_volume)) * 100 if (buy_volume + sell_volume) != 0 else 0
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<3.5f}\trsi: {rsi[-1]:<3.0f}\tb: {patron_confirmado_bajista}\ta: {patron_confirmado_alcista}\ts:{cerca_soporte},r:{cerca_resistencia},v:{volumen_aumento}\t{bucle_cnt} | bv:{buy_volume:<5.0f},sv:{sell_volume:<5.0f},dv:{delta_volume_pct:.0f}%"
                     logger(log_message)
                 
                         
-                    if patron_confirmado_bajista and rsi[-1] > top_rsi and acum_ventas:
+                    if patron_confirmado_bajista and rsi[-1] > top_rsi and delta_volume < 0:
 
                         if len(opened_positions_short) >= max_ops_short:
                             logger(f"{symbol:<18} operaciones abiertas en short {len(opened_positions_short)} | maximo configurado es {max_ops_short}.")
@@ -1091,7 +1076,7 @@ def operar7(simbolos,sr):
                             hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Sell", qty))
                             hilo_monitoreo.start()
 
-                    if patron_confirmado_alcista and rsi[-1] < bottom_rsi and acum_compras:
+                    if patron_confirmado_alcista and rsi[-1] < bottom_rsi and delta_volume > 0:
 
                         if len(opened_positions_long) >= max_ops_long:
                             logger(f"{symbol:<18} operaciones abiertas en long {len(opened_positions_long)} | maximo configurado es {max_ops_long}.")

@@ -1041,9 +1041,19 @@ def operar7(simbolos,sr):
                     rsi = talib.RSI(close_prices, timeperiod=14)
 
 
-                    bids, asks = obtener_orderbook_binance(symbol, order_book_limit)
-                    acum_compras, volumen_ventas,volumen_compras = hay_acumulacion_compras(symbol, precio, bids, asks)
-                    acum_ventas, volumen_ventas,volumen_compras = hay_acumulacion_ventas(symbol, precio, bids, asks)
+                    if bucle_cnt == 1 or bucle_cnt % 10 == 0:
+                        bids, asks = obtener_orderbook_binance(symbol, order_book_limit)
+                        acum_compras, volumen_ventas, volumen_compras = hay_acumulacion_compras(symbol, precio, bids, asks)
+                        acum_ventas, volumen_ventas, volumen_compras = hay_acumulacion_ventas(symbol, precio, bids, asks)
+                    else:
+                        acum_compras = acum_compras if 'acum_compras' in locals() else False
+                        acum_ventas = acum_ventas if 'acum_ventas' in locals() else False
+                        volumen_ventas = volumen_ventas if 'volumen_ventas' in locals() else 0
+                        volumen_compras = volumen_compras if 'volumen_compras' in locals() else 0
+                        bids = bids if 'bids' in locals() else []
+                        asks = asks if 'asks' in locals() else []
+
+
                     delta_acum_volume = volumen_compras - volumen_ventas
                     # delta_volume_pct = (delta_volume / (buy_volume + sell_volume)) * 100 if (buy_volume + sell_volume) != 0 else 0
                     delta_volume_pct = (delta_acum_volume / (volumen_ventas + volumen_compras)) * 100 if (volumen_ventas + volumen_compras) != 0 else 0

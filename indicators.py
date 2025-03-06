@@ -422,3 +422,40 @@ def confirmar_patron_con_soporte_resistencia(symbol, df, patron_ultimo, window=5
             return True,cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib # Confirmación de patrón bajista
 
     return False,cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib
+
+
+
+def confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, patron_ultimo, item, window=50, tolerancia=0.01):
+    global test_mode
+    # Detectamos soportes y resistencias
+
+    soportes = item['soportes_total']
+    resistencias = item['resistencias_total']
+   
+    volumen_aumento = confirmar_volumen6(symbol,df)
+    niveles_fib = fibonacci_retracement6(symbol, df)
+
+    if test_mode == 1:
+        print(f"{test_mode} {symbol} {resistencias} | {df['close'].iloc[-1]} | {soportes}")
+    
+    # Último precio de cierre
+    ultimo_precio = df['close'].iloc[-1]
+    
+    # Verificamos si está cerca de un nivel Fibonacci
+    cerca_fib = esta_cerca(ultimo_precio, niveles_fib.values(), tolerancia)
+
+    # Verificamos si está cerca de un soporte o resistencia
+    cerca_soporte = esta_cerca(ultimo_precio, soportes, tolerancia)
+    cerca_resistencia = esta_cerca(ultimo_precio, resistencias, tolerancia)
+
+    # Condición: patrón alcista cerca de soporte o patrón bajista cerca de resistencia
+    if patron_ultimo == 'alcista':
+        if cerca_soporte and volumen_aumento and cerca_fib:
+            return True,cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib # Confirmación de patrón alcista
+    elif patron_ultimo == 'bajista':
+        if cerca_resistencia and volumen_aumento and cerca_fib:
+            return True,cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib # Confirmación de patrón bajista
+
+    return False,cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib
+
+

@@ -941,6 +941,184 @@ def operar6(simbolos):
          time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
 
 
+def operar7(simbolos,sr):
+    global opened_positions, opened_positions_short, opened_positions_long
+    global saldo_usdt_inicial
+    global api_key, api_secret, timeframe, tp_porcent, sl_porcent, cnt_symbols
+    global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
+    global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
+    global opened_positions_long, opened_positions_short
+    global max_ops_long, max_ops_short, sr_fib_tolerancia, sr_fib_velas,account_usdt_limit
+
+    logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
+
+    bucle_cnt = 0
+    while True:
+         bucle_cnt += 1 
+         for symbol in simbolos:
+            try:
+                # reload_config()
+                posiciones = get_opened_positions(symbol=symbol)
+                if float(posiciones['result']['list'][0]['size']) != 0:
+
+                    if symbol not in opened_positions:
+                        opened_positions.append(symbol)
+
+                    logger("Hay una posicion abierta en " + symbol)
+                    if not verificar_posicion_abierta(symbol):
+                        logger(f"{symbol}: verifico posicion abierta con detalles: {verificar_posicion_abierta_details(symbol)}")
+
+                        precio_de_entrada = float(posiciones['result']['list'][0]['avgPrice'])
+                        if posiciones['result']['list'][0]['side']  == 'Buy':
+                            stop_loss_price = precio_de_entrada * (1 - sl_porcent / 100)
+                            take_profit_price = precio_de_entrada * (1 + tp_porcent / 100)
+                            result_sl = establecer_stop_loss2(symbol, stop_loss_price)
+                            result_tp = establecer_take_profit2(symbol,take_profit_price, "Sell")
+                            if result_sl and result_tp:
+                                logger(f"{symbol} Stop loss y take profit activados")
+                            
+                        else:
+                            stop_loss_price = precio_de_entrada * (1 + sl_porcent / 100)
+                            take_profit_price = precio_de_entrada * (1 - tp_porcent / 100)
+                            result_sl = establecer_stop_loss2(symbol, stop_loss_price)
+                            result_tp = establecer_take_profit2(symbol, take_profit_price, "Buy")
+                            if result_sl and result_tp:
+                                logger(f"{symbol} Stop loss y take profit activados")
+                                
+                    else:
+                        logger(f"Hay una posicion abierta en {symbol} espero 60 segundos")
+                        time.sleep(60)
+                else:
+
+                    if symbol in opened_positions:
+                        opened_positions.remove(symbol)
+
+                    if len(opened_positions) >= max_ops:
+                        logger(f"Se alcanzó el límite de posiciones abiertas | {max_ops}.")
+                        time.sleep(60)
+                        continue
+
+
+                    # Obtener datos historicos
+                    datam = obtener_datos_historicos(symbol, timeframe)
+                   
+                    open_prices = np.array(datam[1])
+                    high_prices = np.array(datam[2])
+                    low_prices = np.array(datam[3])
+                    close_prices = np.array(datam[4])
+                    volumes = np.array(datam[5])
+
+                    data = calcular_bandas_bollinger(datam)
+                    bb_width = data['BB_Width_%']
+                    if bb_width < Bollinger_bands_width:
+                        time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                        continue;
+                        
+
+                    # Crear un DataFrame de pandas con los datos
+                    df = pd.DataFrame({
+                        'open': open_prices,
+                        'high': high_prices,
+                        'low': low_prices,
+                        'close': close_prices,
+                        'volume': volumes
+                    })
+
+                    ticker = client.get_tickers(category='linear', symbol=symbol)
+                    precio = float(ticker['result']['list'][0]['lastPrice'])
+                    price24hPcnt = float(ticker['result']['list'][0]['price24hPcnt']) * 100
+                    
+                    if bucle_cnt >= random.randint(150, 200):
+                        sr = get_syr(symbol)
+                        bucle_cnt = 0
+                        
+                    patron_confirmado_bajista, cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'bajista', sr, sr_fib_velas, sr_fib_tolerancia)
+                    patron_confirmado_alcista, cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'alcista', sr, sr_fib_velas, sr_fib_tolerancia)
+
+                    rsi = talib.RSI(close_prices, timeperiod=14)
+
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<3.2f}\trsi: {rsi[-1]:.1f}\tbajista: {patron_confirmado_bajista}\talcista: {patron_confirmado_alcista}\ts:{cerca_soporte},r:{cerca_resistencia},v:{volumen_aumento},f:{cerca_fib}"
+                    logger(log_message)
+                
+                        
+                    if patron_confirmado_bajista and rsi[-1] > top_rsi:
+
+                        if len(opened_positions_short) >= max_ops_short:
+                            logger(f"{symbol:<18} operaciones abiertas en short {len(opened_positions_short)} | maximo configurado es {max_ops_short}.")
+                            time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                            continue
+
+                        # Datos de la moneda precio y pasos.
+                        step = client.get_instruments_info(category="linear", symbol=symbol)
+                        precision_step = float(step['result']['list'][0]["lotSizeFilter"]["qtyStep"])
+
+                        saldo_usdt = obtener_saldo_usdt()
+                        usdt = saldo_usdt * (account_percentage / 100)
+                        if saldo_usdt < account_usdt_limit:
+                            time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                            continue
+
+                        precision = precision_step
+                        qty = usdt / precio
+                        qty = qty_precision(qty, precision)
+                        if qty.is_integer():
+                            qty = int(qty)
+                        logger(f"{symbol} Cantidad de monedas a vender: " + str(qty))
+                        crear_orden(symbol, "Sell", "Market", qty)
+                        if monitoring == 1:
+                            # Iniciar el monitoreo de la operación
+                            precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
+                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Sell", qty))
+                            hilo_monitoreo.start()
+
+                    if patron_confirmado_alcista and rsi[-1] < bottom_rsi:
+
+                        if len(opened_positions_long) >= max_ops_long:
+                            logger(f"{symbol:<18} operaciones abiertas en long {len(opened_positions_long)} | maximo configurado es {max_ops_long}.")
+                            time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                            continue
+
+                        # Datos de la moneda precio y pasos.
+                        step = client.get_instruments_info(category="linear", symbol=symbol)
+                        precision_step = float(step['result']['list'][0]["lotSizeFilter"]["qtyStep"])
+
+                        saldo_usdt = obtener_saldo_usdt()
+                        usdt = saldo_usdt * (account_percentage / 100)
+
+                        if saldo_usdt < account_usdt_limit:
+                            continue
+
+                        precision = precision_step
+                        qty = usdt / precio
+                        qty = qty_precision(qty, precision)
+                        if qty.is_integer():
+                            qty = int(qty)
+                        logger(f"{symbol} Cantidad de monedas a comprar: " + str(qty))
+                        crear_orden(symbol, "Buy", "Market", qty)
+                        if monitoring == 1:
+                            # Iniciar el monitoreo de la operación
+                            precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
+                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Buy", qty))
+                            hilo_monitoreo.start()
+
+            except Exception as e:
+                logger(f"Error en el bot {symbol}: {e}")
+                time.sleep(60)
+
+         time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+
+
+
+def get_syr(symbol):
+    global soportes_resistencias
+
+    s,r,va,st,rt = get_soportes_resistencia(symbol)
+    item = {'soportes_cerca': s, 'resistencias_cerca': r, 'valor_actual': va, 'soportes_total': st, 'resistencias_total': rt}
+    soportes_resistencias[symbol] = item
+
+    return item
+
+
 # Lista de otros símbolos a buscar
 otros_simbolos = obtener_simbolos_mayor_volumen(cnt_symbols)
 
@@ -984,6 +1162,17 @@ if strategy == 6:
     hilos = []
     for simbolo in otros_simbolos:
         hilo = threading.Thread(target=operar6, args=([simbolo],))
+        hilos.append(hilo)
+        hilo.start()
+
+
+if strategy == 7:
+    hilos = []
+    for simbolo in otros_simbolos:
+        item = get_syr(simbolo)
+        time.sleep(0.1)
+
+        hilo = threading.Thread(target=operar7, args=([simbolo],item,))
         hilos.append(hilo)
         hilo.start()
 

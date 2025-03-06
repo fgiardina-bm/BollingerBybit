@@ -806,7 +806,7 @@ def obtener_precio_actual(symbol: str) -> float:
         raise
 
 
-def get_soportes_resistencia(symbol, frame1="240", frame2="D", frame3="W", limit1=200, limit2=100, limit3=50, tolerancia=0.005) -> Tuple[np.ndarray, np.ndarray]:
+def get_soportes_resistencia(symbol, frame1="240", frame2="D", frame3="W", limit1=200, limit2=100, limit3=50, tolerancia=0.005) -> Tuple[np.ndarray, np.ndarray, float, np.ndarray, np.ndarray]:
 
     data1 = obtener_datos_historicos(symbol, frame1, limit1)
     if data1 is None or len(data1[4]) == 0:
@@ -830,6 +830,12 @@ def get_soportes_resistencia(symbol, frame1="240", frame2="D", frame3="W", limit
     niveles_finales = consolidar_niveles(niveles_1, niveles_2, niveles_3, tolerancia)
     valor_actual = obtener_precio_actual(symbol)
 
+    niveles = np.array(niveles_finales)
+    soportes_todas = niveles[niveles < valor_actual]
+    resistencias_todas = niveles[niveles > valor_actual]
+
     soportes_cercanos, resistencias_cercanas = encontrar_niveles_cercanos(niveles_finales, valor_actual)
 
-    return soportes_cercanos, resistencias_cercanas, valor_actual
+    return soportes_cercanos, resistencias_cercanas, valor_actual, soportes_todas, resistencias_todas
+
+

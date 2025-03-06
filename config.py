@@ -61,6 +61,8 @@ opened_positions = [];
 opened_positions_short = [];
 opened_positions_long = [];
 
+soportes_resistencias = {}
+
 def reload_config():
 
     global api_key, api_secret, timeframe, tp_porcent, sl_porcent, cnt_symbols
@@ -68,6 +70,7 @@ def reload_config():
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions, opened_positions_short, opened_positions_long
     global max_ops_short, max_ops_long, strategy, sr_fib_tolerancia, test_mode, sr_fib_velas, account_usdt_limit
+    global soportes_resistencias
 
 
     config_path = '.env'
@@ -111,6 +114,8 @@ def reload_config():
         strategy = int(os.getenv("STRATEGY", 1))
         sr_fib_tolerancia = int(os.getenv("SR_FIB_TOLERANCIA", 0.005))
         sr_fib_velas = int(os.getenv("SR_FIB_VELAS", 50))
+
+        soportes_resistencias = {}
 
     except ValueError as e:
         print(f"Error al convertir una variable de entorno: {e}")

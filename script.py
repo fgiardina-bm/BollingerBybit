@@ -1035,18 +1035,16 @@ def operar7(simbolos,sr):
                         sr = get_syr(symbol)
                         bucle_cnt = 0
 
-                    patron_confirmado_bajista, cerca_soporte,cerca_resistencia,volumen_aumento,_ = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'bajista', sr, sr_fib_velas, sr_fib_tolerancia)
-                    patron_confirmado_alcista, cerca_soporte,cerca_resistencia,volumen_aumento,_ = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'alcista', sr, sr_fib_velas, sr_fib_tolerancia)
+                    patron_confirmado_bajista, cerca_soporte,cerca_resistencia,volumen_aumento,_ = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'bajista', sr , data, sr_fib_velas, sr_fib_tolerancia)
+                    patron_confirmado_alcista, cerca_soporte,cerca_resistencia,volumen_aumento,_ = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'alcista', sr, data,sr_fib_velas, sr_fib_tolerancia)
 
                     rsi = talib.RSI(close_prices, timeperiod=14)
 
-                    # delta_acum_volume = volumen_compras - volumen_ventas
-                    delta_volume_pct = (delta_volume / (buy_volume + sell_volume)) * 100 if (buy_volume + sell_volume) != 0 else 0
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<3.5f}\trsi: {rsi[-1]:<3.0f}\tb: {patron_confirmado_bajista}\ta: {patron_confirmado_alcista}\ts:{cerca_soporte},r:{cerca_resistencia},v:{volumen_aumento}\t{bucle_cnt} | bv:{buy_volume:<5.0f},sv:{sell_volume:<5.0f},dv:{delta_volume_pct:.0f}%"
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<3.5f}\trsi: {rsi[-1]:<3.0f}\tb: {patron_confirmado_bajista}\ta: {patron_confirmado_alcista}\ts:{cerca_soporte},r:{cerca_resistencia},v:{volumen_aumento}\t{bucle_cnt}"
                     logger(log_message)
                 
                         
-                    if patron_confirmado_bajista and rsi[-1] > top_rsi and delta_volume < 0:
+                    if patron_confirmado_bajista and rsi[-1] > top_rsi:
 
                         if len(opened_positions_short) >= max_ops_short:
                             logger(f"{symbol:<18} operaciones abiertas en short {len(opened_positions_short)} | maximo configurado es {max_ops_short}.")
@@ -1076,7 +1074,7 @@ def operar7(simbolos,sr):
                             hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Sell", qty))
                             hilo_monitoreo.start()
 
-                    if patron_confirmado_alcista and rsi[-1] < bottom_rsi and delta_volume > 0:
+                    if patron_confirmado_alcista and rsi[-1] < bottom_rsi:
 
                         if len(opened_positions_long) >= max_ops_long:
                             logger(f"{symbol:<18} operaciones abiertas en long {len(opened_positions_long)} | maximo configurado es {max_ops_long}.")

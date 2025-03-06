@@ -1040,7 +1040,7 @@ def operar7(simbolos,sr):
 
                     rsi = talib.RSI(close_prices, timeperiod=14)
 
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<3.2f}\trsi: {rsi[-1]:.1f}\tbajista: {patron_confirmado_bajista}\talcista: {patron_confirmado_alcista}\ts:{cerca_soporte},r:{cerca_resistencia},v:{volumen_aumento} | {bucle_cnt} | bv:{buy_volume},sv:{sell_volume},dv:{delta_volume}"
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<3.2f}\trsi: {rsi[-1]:.1f}\tbajista: {patron_confirmado_bajista}\talcista: {patron_confirmado_alcista}\ts:{cerca_soporte},r:{cerca_resistencia},v:{volumen_aumento}\t{bucle_cnt} | bv:{buy_volume},sv:{sell_volume},dv:{delta_volume}"
                     logger(log_message)
                 
                         

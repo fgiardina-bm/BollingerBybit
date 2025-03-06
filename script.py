@@ -1024,7 +1024,7 @@ def operar7(simbolos,sr):
                         'volume': volumes
                     })
 
-                    ticker = client.get_tickers(category='linear', symbol=symbol)
+                    ticker = client.get_tickers(category='linear', symbol=symbol, limit=25)
                     precio = float(ticker['result']['list'][0]['lastPrice'])
                     price24hPcnt = float(ticker['result']['list'][0]['price24hPcnt']) * 100
                     buy_volume = float(ticker['result']['list'][0]['bid1Size'])
@@ -1041,12 +1041,16 @@ def operar7(simbolos,sr):
                     rsi = talib.RSI(close_prices, timeperiod=14)
 
 
-                    delta_volume_pct = (delta_volume / (buy_volume + sell_volume)) * 100 if (buy_volume + sell_volume) != 0 else 0
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<3.2f}\trsi: {rsi[-1]:.1f}\tb: {patron_confirmado_bajista}\ta: {patron_confirmado_alcista}\ts:{cerca_soporte},r:{cerca_resistencia},v:{volumen_aumento}\t{bucle_cnt} | bv:{buy_volume:<5.2f},sv:{sell_volume:<5.2f},dv:{delta_volume_pct:.2f}%"
+                    acum_compras, volumen_ventas,volumen_compras = hay_acumulacion_compras(symbol, precio, ticker)
+                    acum_ventas, volumen_ventas,volumen_compras = hay_acumulacion_ventas(symbol, precio, ticker)
+                    delta_acum_volume = volumen_compras - volumen_ventas
+                    # delta_volume_pct = (delta_volume / (buy_volume + sell_volume)) * 100 if (buy_volume + sell_volume) != 0 else 0
+                    delta_volume_pct = (delta_acum_volume / (volumen_ventas + volumen_compras)) * 100 if (volumen_ventas + volumen_compras) != 0 else 0
+                    log_message = f"{symbol:<18} Price: {precio:<15.0f}\tp24h: {price24hPcnt:<3.0f}\trsi: {rsi[-1]:.0f}\tb: {patron_confirmado_bajista:<5}\ta: {patron_confirmado_alcista:<5}\ts:{cerca_soporte},r:{cerca_resistencia},v:{volumen_aumento}\t{bucle_cnt} | bv:{volumen_compras:<5.0f},sv:{volumen_ventas:<5.0f},dv:{delta_volume_pct:.0f}%"
                     logger(log_message)
                 
                         
-                    if patron_confirmado_bajista and rsi[-1] > top_rsi and delta_volume < 0:
+                    if patron_confirmado_bajista and rsi[-1] > top_rsi and acum_ventas:
 
                         if len(opened_positions_short) >= max_ops_short:
                             logger(f"{symbol:<18} operaciones abiertas en short {len(opened_positions_short)} | maximo configurado es {max_ops_short}.")
@@ -1076,7 +1080,7 @@ def operar7(simbolos,sr):
                             hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Sell", qty))
                             hilo_monitoreo.start()
 
-                    if patron_confirmado_alcista and rsi[-1] < bottom_rsi and delta_volume > 0:
+                    if patron_confirmado_alcista and rsi[-1] < bottom_rsi and acum_compras:
 
                         if len(opened_positions_long) >= max_ops_long:
                             logger(f"{symbol:<18} operaciones abiertas en long {len(opened_positions_long)} | maximo configurado es {max_ops_long}.")

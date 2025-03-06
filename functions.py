@@ -839,7 +839,7 @@ def get_soportes_resistencia(symbol, frame1="240", frame2="D", frame3="W", limit
     return soportes_cercanos, resistencias_cercanas, valor_actual, soportes_todas, resistencias_todas
 
 
-def hay_acumulacion_compras(symbol: str, soporte: float, tolerancia: float = 0.01) -> bool:
+def hay_acumulacion_compras(symbol: str, soporte: float, ticker ,tolerancia: float = 0.01):
     """
     Verifica si hay acumulación de órdenes de compra en el soporte que supera las ventas.
     
@@ -853,7 +853,7 @@ def hay_acumulacion_compras(symbol: str, soporte: float, tolerancia: float = 0.0
     """
     try:
         # Obtener el Order Book
-        order_book = client.get_orderbook(category="linear", symbol=symbol, limit=25)
+        order_book = ticker
         bids = order_book['result']['b']  # Órdenes de compra [[precio, volumen]]
         asks = order_book['result']['a']  # Órdenes de venta [[precio, volumen]]
 
@@ -872,17 +872,17 @@ def hay_acumulacion_compras(symbol: str, soporte: float, tolerancia: float = 0.0
         # Comparar volúmenes
         if volumen_compras > volumen_ventas:
             print("✅ Hay acumulación de compras en el soporte. Posible rebote.")
-            return True
+            return True,volumen_ventas,volumen_compras
         else:
             print("❌ No hay acumulación de compras suficiente en el soporte.")
-            return False
+            return False,volumen_ventas,volumen_compras
 
     except Exception as e:
         print(f"⚠️ Error al obtener datos: {e}")
         return False
 
 
-def hay_acumulacion_ventas(symbol: str, resistencia: float, tolerancia: float = 0.01) -> bool:
+def hay_acumulacion_ventas(symbol: str, resistencia: float, ticker, tolerancia: float = 0.01):
     """
     Verifica si hay acumulación de órdenes de venta en la resistencia que supera las compras.
     
@@ -896,7 +896,7 @@ def hay_acumulacion_ventas(symbol: str, resistencia: float, tolerancia: float = 
     """
     try:
         # Obtener el Order Book
-        order_book = client.get_orderbook(category="linear", symbol=symbol, limit=25)
+        order_book = ticker
         bids = order_book['result']['b']  # Órdenes de compra [[precio, volumen]]
         asks = order_book['result']['a']  # Órdenes de venta [[precio, volumen]]
 
@@ -915,10 +915,10 @@ def hay_acumulacion_ventas(symbol: str, resistencia: float, tolerancia: float = 
         # Comparar volúmenes
         if volumen_ventas > volumen_compras:
             print("🚨 Hay acumulación de ventas en la resistencia. Posible rechazo. 🚨")
-            return True
+            return True,volumen_ventas,volumen_compras
         else:
             print("✅ No hay acumulación fuerte de ventas en la resistencia.")
-            return False
+            return False,volumen_ventas,volumen_compras
 
     except Exception as e:
         print(f"⚠️ Error al obtener datos: {e}")

@@ -57,6 +57,7 @@ def buscar_precios_otros_simbolos(simbolos):
         time.sleep(10)  # Esperar 60 segundos antes de la próxima búsqueda
 
 def obtener_simbolos_mayor_volumen(cnt=10):
+    global black_list_symbols
     try:
         tickers = client.get_tickers(category='linear')
         if tickers["retCode"] == 0:
@@ -70,6 +71,8 @@ def obtener_simbolos_mayor_volumen(cnt=10):
             for ticker in usdt_tickers[:cnt]:
                 logger(f"Símbolo: {ticker['symbol']} Volumen: {float(ticker['turnover24h']) / 1000000:.2f} M")
             
+            # Remover los símbolos que están en la lista negra
+            top_10_simbolos = [symbol for symbol in top_10_simbolos if symbol not in black_list_symbols]
             return top_10_simbolos
         else:
             logger("Error en la API:" + tickers["retMsg"])

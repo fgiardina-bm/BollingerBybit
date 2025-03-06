@@ -874,7 +874,7 @@ def operar6(simbolos):
                     logger(log_message)
                 
                         
-                    if patron_confirmado_bajista:
+                    if patron_confirmado_bajista and rsi[-1] > top_rsi:
 
                         if len(opened_positions_short) >= max_ops_short:
                             logger(f"{symbol:<18} operaciones abiertas en short {len(opened_positions_short)} | maximo configurado es {max_ops_short}.")
@@ -904,7 +904,7 @@ def operar6(simbolos):
                             hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Sell", qty))
                             hilo_monitoreo.start()
 
-                    if patron_confirmado_alcista:
+                    if patron_confirmado_alcista and rsi[-1] < bottom_rsi:
 
                         if len(opened_positions_long) >= max_ops_long:
                             logger(f"{symbol:<18} operaciones abiertas en long {len(opened_positions_long)} | maximo configurado es {max_ops_long}.")

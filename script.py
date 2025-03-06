@@ -948,7 +948,7 @@ def operar7(simbolos,sr):
     global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions_long, opened_positions_short
-    global max_ops_long, max_ops_short, sr_fib_tolerancia, sr_fib_velas,account_usdt_limit
+    global max_ops_long, max_ops_short, sr_fib_tolerancia, sr_fib_velas,account_usdt_limit, order_book_limit
 
     logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
 
@@ -1041,13 +1041,13 @@ def operar7(simbolos,sr):
                     rsi = talib.RSI(close_prices, timeperiod=14)
 
 
-                    order_book = client.get_orderbook(category="linear", symbol=symbol, limit=25)
-                    acum_compras, volumen_ventas,volumen_compras = hay_acumulacion_compras(symbol, precio, order_book)
-                    acum_ventas, volumen_ventas,volumen_compras = hay_acumulacion_ventas(symbol, precio, order_book)
+                    bids, asks = obtener_orderbook_binance(symbol, order_book_limit)
+                    acum_compras, volumen_ventas,volumen_compras = hay_acumulacion_compras(symbol, precio, bids, asks)
+                    acum_ventas, volumen_ventas,volumen_compras = hay_acumulacion_ventas(symbol, precio, bids, asks)
                     delta_acum_volume = volumen_compras - volumen_ventas
                     # delta_volume_pct = (delta_volume / (buy_volume + sell_volume)) * 100 if (buy_volume + sell_volume) != 0 else 0
                     delta_volume_pct = (delta_acum_volume / (volumen_ventas + volumen_compras)) * 100 if (volumen_ventas + volumen_compras) != 0 else 0
-                    log_message = f"{symbol:<18} Price: {precio:<15.0f}\tp24h: {price24hPcnt:<3.0f}\trsi: {rsi[-1]:.0f}\tb: {patron_confirmado_bajista:<5}\ta: {patron_confirmado_alcista:<5}\ts:{cerca_soporte},r:{cerca_resistencia},v:{volumen_aumento}\t{bucle_cnt} | bv:{volumen_compras:<5.0f},sv:{volumen_ventas:<5.0f},dv:{delta_volume_pct:.0f}%"
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<3.5f}\trsi: {rsi[-1]:<3.0f}\tb: {patron_confirmado_bajista}\ta: {patron_confirmado_alcista}\ts:{cerca_soporte},r:{cerca_resistencia},v:{volumen_aumento}\t{bucle_cnt} | bv:{volumen_compras:<5.0f},sv:{volumen_ventas:<5.0f},dv:{delta_volume_pct:.0f}%"
                     logger(log_message)
                 
                         

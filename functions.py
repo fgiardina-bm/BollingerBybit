@@ -20,6 +20,7 @@ import argparse
 import logging
 from typing import Tuple, List, Optional, Dict, Any
 import os
+import ccxt
 
 client = HTTP(api_key=api_key, api_secret=api_secret, testnet=False)
 
@@ -838,8 +839,35 @@ def get_soportes_resistencia(symbol, frame1="240", frame2="D", frame3="W", limit
 
     return soportes_cercanos, resistencias_cercanas, valor_actual, soportes_todas, resistencias_todas
 
+exchange = ccxt.binance({
+    'enableRateLimit': True,
+    'options': {'defaultType': 'future'}  # Esto especifica que quieres usar el mercado de futuros
+})
 
-def hay_acumulacion_compras(symbol: str, soporte: float, order_book ,tolerancia: float = 0.01):
+def obtener_orderbook_binance(symbol: str, limite: int = 1000):
+    """
+    Obtiene el Order Book (libro de órdenes) de Binance para un par de trading.
+
+    Parámetros:
+    - symbol (str): Par de trading en formato Binance (ej. "BTC/USDT").
+    - limite (int): Número de niveles del Order Book (default: 100, máximo: 5000).
+
+    Retorna:
+    - bids: Lista de órdenes de compra [[precio, volumen], ...]
+    - asks: Lista de órdenes de venta [[precio, volumen], ...]
+    """
+    try:
+        order_book = exchange.fetch_order_book(symbol.replace('USDT', '/USDT'), limit=limite)
+        bids = order_book['bids']  # Órdenes de compra [[precio, volumen]]
+        asks = order_book['asks']  # Órdenes de venta [[precio, volumen]]
+
+        return bids, asks
+
+    except Exception as e:
+        print(f"⚠️ Error al obtener Order Book de binance: {e}")
+        return [], []
+
+def hay_acumulacion_compras(symbol: str, soporte: float, bids, asks ,tolerancia: float = 0.01):
     """
     Verifica si hay acumulación de órdenes de compra en el soporte que supera las ventas.
     
@@ -852,9 +880,6 @@ def hay_acumulacion_compras(symbol: str, soporte: float, order_book ,tolerancia:
     - bool: True si hay más compras que ventas en el soporte, False si no.
     """
     try:
-        # Obtener el Order Book
-        bids = order_book['result']['b']  # Órdenes de compra [[precio, volumen]]
-        asks = order_book['result']['a']  # Órdenes de venta [[precio, volumen]]
 
         # Filtrar órdenes de compra cercanas al soporte (dentro de ±tolerancia%)
         bids_cercanos = [bid for bid in bids if soporte * (1 - tolerancia) <= float(bid[0]) <= soporte * (1 + tolerancia)]
@@ -881,7 +906,7 @@ def hay_acumulacion_compras(symbol: str, soporte: float, order_book ,tolerancia:
         return False,0,0
 
 
-def hay_acumulacion_ventas(symbol: str, resistencia: float, order_book, tolerancia: float = 0.01):
+def hay_acumulacion_ventas(symbol: str, resistencia: float, bids, asks , tolerancia: float = 0.01):
     """
     Verifica si hay acumulación de órdenes de venta en la resistencia que supera las compras.
     
@@ -894,8 +919,6 @@ def hay_acumulacion_ventas(symbol: str, resistencia: float, order_book, toleranc
     - bool: True si hay más ventas que compras en la resistencia, False si no.
     """
     try:
-        bids = order_book['result']['b']  # Órdenes de compra [[precio, volumen]]
-        asks = order_book['result']['a']  # Órdenes de venta [[precio, volumen]]
 
         # Filtrar órdenes de venta cercanas a la resistencia (dentro de ±tolerancia%)
         asks_cercanos = [ask for ask in asks if resistencia * (1 - tolerancia) <= float(ask[0]) <= resistencia * (1 + tolerancia)]

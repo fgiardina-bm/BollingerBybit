@@ -53,7 +53,7 @@ sr_fib_tolerancia = float(os.getenv("SR_FIB_TOLERANCIA", 0.005))
 sr_fib_velas = int(os.getenv("SR_FIB_VELAS", 50))
 
 test_mode = int(os.getenv("TEST_MODE", 0))
-
+order_book_limit = int(os.getenv("ORDER_BOOK_LIMIT", 1000))
 
 config_lock = threading.Lock()
 
@@ -70,7 +70,7 @@ def reload_config():
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions, opened_positions_short, opened_positions_long
     global max_ops_short, max_ops_long, strategy, sr_fib_tolerancia, test_mode, sr_fib_velas, account_usdt_limit
-    global soportes_resistencias
+    global soportes_resistencias, order_book_limit
 
 
     config_path = '.env'
@@ -114,6 +114,7 @@ def reload_config():
         strategy = int(os.getenv("STRATEGY", 1))
         sr_fib_tolerancia = int(os.getenv("SR_FIB_TOLERANCIA", 0.005))
         sr_fib_velas = int(os.getenv("SR_FIB_VELAS", 50))
+        order_book_limit = int(os.getenv("ORDER_BOOK_LIMIT", 1000))
 
         soportes_resistencias = {}
 

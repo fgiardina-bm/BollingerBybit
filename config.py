@@ -55,7 +55,7 @@ sr_fib_velas = int(os.getenv("SR_FIB_VELAS", 50))
 test_mode = int(os.getenv("TEST_MODE", 0))
 order_book_limit = int(os.getenv("ORDER_BOOK_LIMIT", 1000))
 order_book_delay_divisor= int(os.getenv("ORDER_BOOK_DELAY_DIVISOR", 1))
-black_list_symbols = os.getenv("BLACK_LIST_SYMBOLS", "").split(",")
+black_list_symbols = os.getenv("BLACK_LIST_SYMBOLS", "BNXUSDT").split(",")
 
 config_lock = threading.Lock()
 

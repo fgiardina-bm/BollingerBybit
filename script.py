@@ -1031,7 +1031,7 @@ def operar7(simbolos,sr):
                     if bucle_cnt >= random.randint(150, 200):
                         sr = get_syr(symbol)
                         bucle_cnt = 0
-                        
+
                     patron_confirmado_bajista, cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'bajista', sr, sr_fib_velas, sr_fib_tolerancia)
                     patron_confirmado_alcista, cerca_soporte,cerca_resistencia,volumen_aumento,cerca_fib = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'alcista', sr, sr_fib_velas, sr_fib_tolerancia)
 
@@ -1112,11 +1112,16 @@ def operar7(simbolos,sr):
 def get_syr(symbol):
     global soportes_resistencias
 
-    s,r,va,st,rt = get_soportes_resistencia(symbol)
-    item = {'soportes_cerca': s, 'resistencias_cerca': r, 'valor_actual': va, 'soportes_total': st, 'resistencias_total': rt}
-    soportes_resistencias[symbol] = item
+    try: 
+        s,r,va,st,rt = get_soportes_resistencia(symbol)
+        item = {'soportes_cerca': s, 'resistencias_cerca': r, 'valor_actual': va, 'soportes_total': st, 'resistencias_total': rt}
+        soportes_resistencias[symbol] = item
 
-    return item
+        return item
+    except Exception as e:
+        logger(f"Error en get_syr {symbol}: {e}")
+        
+    return {'soportes_cerca': [], 'resistencias_cerca': [], 'valor_actual': 0, 'soportes_total': [], 'resistencias_total': []}
 
 
 # Lista de otros símbolos a buscar

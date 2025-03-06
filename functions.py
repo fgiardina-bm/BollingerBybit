@@ -839,7 +839,7 @@ def get_soportes_resistencia(symbol, frame1="240", frame2="D", frame3="W", limit
     return soportes_cercanos, resistencias_cercanas, valor_actual, soportes_todas, resistencias_todas
 
 
-def hay_acumulacion_compras(symbol: str, soporte: float, ticker ,tolerancia: float = 0.01):
+def hay_acumulacion_compras(symbol: str, soporte: float, order_book ,tolerancia: float = 0.01):
     """
     Verifica si hay acumulación de órdenes de compra en el soporte que supera las ventas.
     
@@ -853,7 +853,6 @@ def hay_acumulacion_compras(symbol: str, soporte: float, ticker ,tolerancia: flo
     """
     try:
         # Obtener el Order Book
-        order_book = ticker
         bids = order_book['result']['b']  # Órdenes de compra [[precio, volumen]]
         asks = order_book['result']['a']  # Órdenes de venta [[precio, volumen]]
 
@@ -879,10 +878,10 @@ def hay_acumulacion_compras(symbol: str, soporte: float, ticker ,tolerancia: flo
 
     except Exception as e:
         print(f"⚠️ Error al obtener datos: {e}")
-        return False
+        return False,0,0
 
 
-def hay_acumulacion_ventas(symbol: str, resistencia: float, ticker, tolerancia: float = 0.01):
+def hay_acumulacion_ventas(symbol: str, resistencia: float, order_book, tolerancia: float = 0.01):
     """
     Verifica si hay acumulación de órdenes de venta en la resistencia que supera las compras.
     
@@ -895,8 +894,6 @@ def hay_acumulacion_ventas(symbol: str, resistencia: float, ticker, tolerancia: 
     - bool: True si hay más ventas que compras en la resistencia, False si no.
     """
     try:
-        # Obtener el Order Book
-        order_book = ticker
         bids = order_book['result']['b']  # Órdenes de compra [[precio, volumen]]
         asks = order_book['result']['a']  # Órdenes de venta [[precio, volumen]]
 
@@ -922,4 +919,4 @@ def hay_acumulacion_ventas(symbol: str, resistencia: float, ticker, tolerancia: 
 
     except Exception as e:
         print(f"⚠️ Error al obtener datos: {e}")
-        return False
+        return False,0,0

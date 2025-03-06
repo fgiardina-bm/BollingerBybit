@@ -1024,7 +1024,7 @@ def operar7(simbolos,sr):
                         'volume': volumes
                     })
 
-                    ticker = client.get_tickers(category='linear', symbol=symbol, limit=25)
+                    ticker = client.get_tickers(category='linear', symbol=symbol)
                     precio = float(ticker['result']['list'][0]['lastPrice'])
                     price24hPcnt = float(ticker['result']['list'][0]['price24hPcnt']) * 100
                     buy_volume = float(ticker['result']['list'][0]['bid1Size'])
@@ -1041,8 +1041,9 @@ def operar7(simbolos,sr):
                     rsi = talib.RSI(close_prices, timeperiod=14)
 
 
-                    acum_compras, volumen_ventas,volumen_compras = hay_acumulacion_compras(symbol, precio, ticker)
-                    acum_ventas, volumen_ventas,volumen_compras = hay_acumulacion_ventas(symbol, precio, ticker)
+                    order_book = client.get_orderbook(category="linear", symbol=symbol, limit=25)
+                    acum_compras, volumen_ventas,volumen_compras = hay_acumulacion_compras(symbol, precio, order_book)
+                    acum_ventas, volumen_ventas,volumen_compras = hay_acumulacion_ventas(symbol, precio, order_book)
                     delta_acum_volume = volumen_compras - volumen_ventas
                     # delta_volume_pct = (delta_volume / (buy_volume + sell_volume)) * 100 if (buy_volume + sell_volume) != 0 else 0
                     delta_volume_pct = (delta_acum_volume / (volumen_ventas + volumen_compras)) * 100 if (volumen_ventas + volumen_compras) != 0 else 0

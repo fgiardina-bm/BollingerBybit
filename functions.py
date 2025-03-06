@@ -839,3 +839,87 @@ def get_soportes_resistencia(symbol, frame1="240", frame2="D", frame3="W", limit
     return soportes_cercanos, resistencias_cercanas, valor_actual, soportes_todas, resistencias_todas
 
 
+def hay_acumulacion_compras(symbol: str, soporte: float, tolerancia: float = 0.01) -> bool:
+    """
+    Verifica si hay acumulación de órdenes de compra en el soporte que supera las ventas.
+    
+    Parámetros:
+    - symbol (str): El par de trading (ej. "BTCUSDT").
+    - soporte (float): Nivel de soporte a evaluar.
+    - tolerancia (float): Margen de precio para considerar órdenes cercanas al soporte (por defecto ±1%).
+
+    Retorna:
+    - bool: True si hay más compras que ventas en el soporte, False si no.
+    """
+    try:
+        # Obtener el Order Book
+        order_book = client.get_orderbook(category="linear", symbol=symbol, limit=25)
+        bids = order_book['result']['b']  # Órdenes de compra [[precio, volumen]]
+        asks = order_book['result']['a']  # Órdenes de venta [[precio, volumen]]
+
+        # Filtrar órdenes de compra cercanas al soporte (dentro de ±tolerancia%)
+        bids_cercanos = [bid for bid in bids if soporte * (1 - tolerancia) <= float(bid[0]) <= soporte * (1 + tolerancia)]
+        asks_cercanos = [ask for ask in asks if soporte * (1 - tolerancia) <= float(ask[0]) <= soporte * (1 + tolerancia)]
+
+        # Sumar volumen de órdenes de compra y venta en el soporte
+        volumen_compras = sum(float(bid[1]) for bid in bids_cercanos)
+        volumen_ventas = sum(float(ask[1]) for ask in asks_cercanos)
+
+        print(f"📊 Soporte: {soporte}")
+        print(f"💰 Volumen de compras: {volumen_compras}")
+        print(f"📉 Volumen de ventas: {volumen_ventas}")
+
+        # Comparar volúmenes
+        if volumen_compras > volumen_ventas:
+            print("✅ Hay acumulación de compras en el soporte. Posible rebote.")
+            return True
+        else:
+            print("❌ No hay acumulación de compras suficiente en el soporte.")
+            return False
+
+    except Exception as e:
+        print(f"⚠️ Error al obtener datos: {e}")
+        return False
+
+
+def hay_acumulacion_ventas(symbol: str, resistencia: float, tolerancia: float = 0.01) -> bool:
+    """
+    Verifica si hay acumulación de órdenes de venta en la resistencia que supera las compras.
+    
+    Parámetros:
+    - symbol (str): El par de trading (ej. "BTCUSDT").
+    - resistencia (float): Nivel de resistencia a evaluar.
+    - tolerancia (float): Margen de precio para considerar órdenes cercanas a la resistencia (por defecto ±1%).
+
+    Retorna:
+    - bool: True si hay más ventas que compras en la resistencia, False si no.
+    """
+    try:
+        # Obtener el Order Book
+        order_book = client.get_orderbook(category="linear", symbol=symbol, limit=25)
+        bids = order_book['result']['b']  # Órdenes de compra [[precio, volumen]]
+        asks = order_book['result']['a']  # Órdenes de venta [[precio, volumen]]
+
+        # Filtrar órdenes de venta cercanas a la resistencia (dentro de ±tolerancia%)
+        asks_cercanos = [ask for ask in asks if resistencia * (1 - tolerancia) <= float(ask[0]) <= resistencia * (1 + tolerancia)]
+        bids_cercanos = [bid for bid in bids if resistencia * (1 - tolerancia) <= float(bid[0]) <= resistencia * (1 + tolerancia)]
+
+        # Sumar volumen de órdenes de venta y compra en la resistencia
+        volumen_ventas = sum(float(ask[1]) for ask in asks_cercanos)
+        volumen_compras = sum(float(bid[1]) for bid in bids_cercanos)
+
+        print(f"📊 Resistencia: {resistencia}")
+        print(f"📉 Volumen de ventas: {volumen_ventas}")
+        print(f"💰 Volumen de compras: {volumen_compras}")
+
+        # Comparar volúmenes
+        if volumen_ventas > volumen_compras:
+            print("🚨 Hay acumulación de ventas en la resistencia. Posible rechazo. 🚨")
+            return True
+        else:
+            print("✅ No hay acumulación fuerte de ventas en la resistencia.")
+            return False
+
+    except Exception as e:
+        print(f"⚠️ Error al obtener datos: {e}")
+        return False

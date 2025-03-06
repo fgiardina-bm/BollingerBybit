@@ -1113,6 +1113,7 @@ def get_syr(symbol):
     global soportes_resistencias
 
     try: 
+        logger(f"{symbol} ---- Obteniendo soportes y resistencias en 3 niveles ----")
         s,r,va,st,rt = get_soportes_resistencia(symbol)
         item = {'soportes_cerca': s, 'resistencias_cerca': r, 'valor_actual': va, 'soportes_total': st, 'resistencias_total': rt}
         soportes_resistencias[symbol] = item

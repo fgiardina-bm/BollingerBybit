@@ -453,10 +453,10 @@ def confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, patron_ultimo,
     # Condición: patrón alcista cerca de soporte o patrón bajista cerca de resistencia
     if patron_ultimo == 'alcista':
         if cerca_soporte_resistencia and volumen_aumento and price_in_bollinger_lower:
-            return True,cerca_soporte_resistencia,volumen_aumento,cerca_fib # Confirmación de patrón alcista
+            return True,cerca_soporte_resistencia,volumen_aumento,price_in_bollinger_lower # Confirmación de patrón alcista
     elif patron_ultimo == 'bajista':
         if  cerca_soporte_resistencia and volumen_aumento and price_in_bollinger_upper:
-            return True,cerca_soporte_resistencia,volumen_aumento,cerca_fib # Confirmación de patrón bajista
+            return True,cerca_soporte_resistencia,volumen_aumento,price_in_bollinger_upper # Confirmación de patrón bajista
 
     return False,cerca_soporte_resistencia,volumen_aumento,cerca_fib
 

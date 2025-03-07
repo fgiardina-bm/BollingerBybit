@@ -1036,7 +1036,7 @@ def operar7(simbolos,sr):
                         bucle_cnt = 0
 
                     patron_confirmado_bajista, cerca_soporte,cerca_resistencia,volumen_aumento,_ = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'bajista', sr , data, sr_fib_velas, sr_fib_tolerancia)
-                    patron_confirmado_alcista, cerca_soporte,cerca_resistencia,volumen_aumento,_ = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'alcista', sr, data,sr_fib_velas, sr_fib_tolerancia)
+                    patron_confirmado_alcista, cerca_soporte,cerca_resistencia,volumen_aumento,_ = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'alcista', sr, data, sr_fib_velas, sr_fib_tolerancia)
 
                     rsi = talib.RSI(close_prices, timeperiod=14)
 

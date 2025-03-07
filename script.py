@@ -1031,16 +1031,16 @@ def operar7(simbolos,sr):
                     sell_volume = float(ticker['result']['list'][0]['ask1Size'])
                     delta_volume = buy_volume - sell_volume
 
-                    if bucle_cnt >= random.randint(50, 100):
+                    if bucle_cnt >= random.randint(200, 300):
                         sr = get_syr(symbol)
                         bucle_cnt = 0
 
-                    patron_confirmado_bajista, cerca_soporte,cerca_resistencia,volumen_aumento,_ = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'bajista', sr , data, sr_fib_velas, sr_fib_tolerancia)
-                    patron_confirmado_alcista, cerca_soporte,cerca_resistencia,volumen_aumento,_ = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'alcista', sr, data, sr_fib_velas, sr_fib_tolerancia)
+                    patron_confirmado_bajista, cerca_soporte_resistencia,volumen_aumento,_ = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'bajista', sr , data, sr_fib_velas, sr_fib_tolerancia)
+                    patron_confirmado_alcista, cerca_soporte_resistencia,volumen_aumento,_ = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'alcista', sr, data, sr_fib_velas, sr_fib_tolerancia)
 
                     rsi = talib.RSI(close_prices, timeperiod=14)
 
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<3.0f}\trsi: {rsi[-1]:<3.0f}\tb: {patron_confirmado_bajista}\ta: {patron_confirmado_alcista}\ts:{cerca_soporte},r:{cerca_resistencia},v:{volumen_aumento}\t{bucle_cnt}"
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<3.0f}\trsi: {rsi[-1]:<3.0f}\tb: {patron_confirmado_bajista}\ta: {patron_confirmado_alcista}\tsr:{cerca_soporte_resistencia},v:{volumen_aumento}\t{bucle_cnt}"
                     logger(log_message)
                 
                         
@@ -1117,15 +1117,15 @@ def get_syr(symbol):
 
     try: 
         logger(f"{symbol} ---- Obteniendo soportes y resistencias en 3 niveles ----")
-        s,r,va,st,rt = get_soportes_resistencia(symbol)
-        item = {'soportes_cerca': s, 'resistencias_cerca': r, 'valor_actual': va, 'soportes_total': st, 'resistencias_total': rt}
+        s,r,va,st,rt,niveles = get_soportes_resistencia(symbol)
+        item = {'soportes_cerca': s, 'resistencias_cerca': r, 'valor_actual': va, 'soportes_total': st, 'resistencias_total': rt, 'niveles': niveles}
         soportes_resistencias[symbol] = item
 
         return item
     except Exception as e:
         logger(f"Error en get_syr {symbol}: {e}")
         
-    return {'soportes_cerca': [], 'resistencias_cerca': [], 'valor_actual': 0, 'soportes_total': [], 'resistencias_total': []}
+    return {'soportes_cerca': [], 'resistencias_cerca': [], 'valor_actual': 0, 'soportes_total': [], 'resistencias_total': [], 'niveles': []}
 
 
 # Lista de otros símbolos a buscar

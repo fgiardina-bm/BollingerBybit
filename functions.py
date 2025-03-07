@@ -840,7 +840,7 @@ def get_soportes_resistencia(symbol, frame1="240", frame2="D", frame3="W", limit
 
     soportes_cercanos, resistencias_cercanas = encontrar_niveles_cercanos(niveles_finales, valor_actual)
 
-    return soportes_cercanos, resistencias_cercanas, valor_actual, soportes_todas, resistencias_todas
+    return soportes_cercanos, resistencias_cercanas, valor_actual, soportes_todas, resistencias_todas,niveles_finales
 
 
 

@@ -437,8 +437,10 @@ def confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, patron_ultimo,
     LowerBandDiff = abs(bb['LowerBand'] - df['close'].iloc[-1])
     UpperTolerance = bb['UpperBand'] * tolerancia
     LowerTolerance = bb['LowerBand'] * tolerancia
-    price_in_bollinger_upper = abs(bb['UpperBand'] - df['close'].iloc[-1]) <= bb['UpperBand'] * tolerancia or df['close'].iloc[-1] > bb['UpperBand']
-    price_in_bollinger_lower = abs(bb['LowerBand'] - df['close'].iloc[-1]) <= bb['LowerBand'] * tolerancia or df['close'].iloc[-1] < bb['LowerBand']
+    # price_in_bollinger_upper = abs(bb['UpperBand'] - df['close'].iloc[-1]) <= bb['UpperBand'] * tolerancia or df['close'].iloc[-1] > bb['UpperBand']
+    # price_in_bollinger_lower = abs(bb['LowerBand'] - df['close'].iloc[-1]) <= bb['LowerBand'] * tolerancia or df['close'].iloc[-1] < bb['LowerBand']
+    price_in_bollinger_upper = df['close'].iloc[-1] > bb['UpperBand']
+    price_in_bollinger_lower = df['close'].iloc[-1] < bb['LowerBand']
 
 
 

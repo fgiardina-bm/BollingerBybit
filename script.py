@@ -1035,12 +1035,15 @@ def operar7(simbolos,sr):
                         sr = get_syr(symbol)
                         bucle_cnt = 0
 
-                    patron_confirmado_bajista, cerca_soporte_resistencia,volumen_aumento,price_in_bollinger = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'bajista', sr , data, sr_fib_velas, sr_fib_tolerancia)
-                    patron_confirmado_alcista, cerca_soporte_resistencia,volumen_aumento,price_in_bollinger = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'alcista', sr, data, sr_fib_velas, sr_fib_tolerancia)
+                    ema_50 = calcular_ema(datam[4], ventana=50)
+                    ema_200 = calcular_ema(datam[4], ventana=200)
+
+                    patron_confirmado_bajista, cerca_soporte_resistencia,volumen_aumento,price_in_bollinger,UpperBandDiff,LowerBandDiff,UpperTolerance,LowerTolerance = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'bajista', sr , data, sr_fib_velas, sr_fib_tolerancia)
+                    patron_confirmado_alcista, cerca_soporte_resistencia,volumen_aumento,price_in_bollinger,UpperBandDiff,LowerBandDiff,UpperTolerance,LowerTolerance = confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, 'alcista', sr, data, sr_fib_velas, sr_fib_tolerancia)
 
                     rsi = talib.RSI(close_prices, timeperiod=14)
 
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<3.0f}\trsi: {rsi[-1]:<3.0f}\tb: {patron_confirmado_bajista}\ta: {patron_confirmado_alcista}\tsr:{cerca_soporte_resistencia},v:{volumen_aumento}\tpb:{price_in_bollinger}\t{bucle_cnt}"
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tp24h: {price24hPcnt:<3.0f}\trsi: {rsi[-1]:<3.0f}\tb:{patron_confirmado_bajista}\ta:{patron_confirmado_alcista}\tsr:{cerca_soporte_resistencia},v:{volumen_aumento}\tpb:{price_in_bollinger}|{ema_50:<3.5f}|{ema_200:<3.5f}"
                     logger(log_message)
                 
                         

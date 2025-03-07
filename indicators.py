@@ -433,6 +433,10 @@ def confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, patron_ultimo,
    
     volumen_aumento = confirmar_volumen6(symbol,df)
     niveles_fib = fibonacci_retracement6(symbol, df)
+    UpperBandDiff = abs(bb['UpperBand'] - df['close'].iloc[-1])
+    LowerBandDiff = abs(bb['LowerBand'] - df['close'].iloc[-1])
+    UpperTolerance = bb['UpperBand'] * tolerancia
+    LowerTolerance = bb['LowerBand'] * tolerancia
     price_in_bollinger_upper = abs(bb['UpperBand'] - df['close'].iloc[-1]) <= bb['UpperBand'] * tolerancia or df['close'].iloc[-1] > bb['UpperBand']
     price_in_bollinger_lower = abs(bb['LowerBand'] - df['close'].iloc[-1]) <= bb['LowerBand'] * tolerancia or df['close'].iloc[-1] < bb['LowerBand']
 
@@ -453,11 +457,11 @@ def confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, patron_ultimo,
     # Condición: patrón alcista cerca de soporte o patrón bajista cerca de resistencia
     if patron_ultimo == 'alcista':
         if cerca_soporte_resistencia and volumen_aumento and price_in_bollinger_lower:
-            return True,cerca_soporte_resistencia,volumen_aumento,price_in_bollinger_lower # Confirmación de patrón alcista
+            return True,cerca_soporte_resistencia,volumen_aumento,price_in_bollinger_lower,UpperBandDiff,LowerBandDiff,UpperTolerance,LowerTolerance # Confirmación de patrón alcista
     elif patron_ultimo == 'bajista':
         if  cerca_soporte_resistencia and volumen_aumento and price_in_bollinger_upper:
-            return True,cerca_soporte_resistencia,volumen_aumento,price_in_bollinger_upper # Confirmación de patrón bajista
+            return True,cerca_soporte_resistencia,volumen_aumento,price_in_bollinger_upper,UpperBandDiff,LowerBandDiff,UpperTolerance,LowerTolerance  # Confirmación de patrón bajista
 
-    return False,cerca_soporte_resistencia,volumen_aumento,cerca_fib
+    return False,cerca_soporte_resistencia,volumen_aumento,price_in_bollinger_upper,UpperBandDiff,LowerBandDiff,UpperTolerance,LowerTolerance
 
 

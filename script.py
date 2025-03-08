@@ -1118,7 +1118,7 @@ def operar7(simbolos,sr):
          time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
 
 
-def operar8(simbolos):
+def operar8(simbolos,sr):
     global opened_positions, opened_positions_short, opened_positions_long
     global saldo_usdt_inicial
     global api_key, api_secret, timeframe, tp_porcent, sl_porcent, cnt_symbols
@@ -1145,19 +1145,40 @@ def operar8(simbolos):
                         logger(f"{symbol}: verifico posicion abierta con detalles: {verificar_posicion_abierta_details(symbol)}")
 
                         precio_de_entrada = float(posiciones['result']['list'][0]['avgPrice'])
+
+                        datam = obtener_datos_historicos(symbol, timeframe)
+                    
+                        open_prices = np.array(datam[1])
+                        high_prices = np.array(datam[2])
+                        low_prices = np.array(datam[3])
+                        close_prices = np.array(datam[4])
+                        volumes = np.array(datam[5])
+
+                        df = pd.DataFrame({
+                            'open': open_prices,
+                            'high': high_prices,
+                            'low': low_prices,
+                            'close': close_prices,
+                            'volume': volumes
+                        })
+                        
                         if posiciones['result']['list'][0]['side']  == 'Buy':
                             stop_loss_price = precio_de_entrada * (1 - sl_porcent / 100)
                             take_profit_price = precio_de_entrada * (1 + tp_porcent / 100)
-                            result_sl = establecer_stop_loss2(symbol, stop_loss_price)
-                            result_tp = establecer_take_profit2(symbol,take_profit_price, "Sell")
+                            stop_loss_short = establecer_stop_loss_dinamico(df, tipo_trade='short')
+                            result_sl = establecer_stop_loss2(symbol, stop_loss_short)
+                            take_profit_short = establecer_take_profit_dinamico(df, tipo_trade='short')
+                            result_tp = establecer_take_profit2(symbol,take_profit_short, "Sell")
                             if result_sl and result_tp:
                                 logger(f"{symbol} Stop loss y take profit activados")
                             
                         else:
                             stop_loss_price = precio_de_entrada * (1 + sl_porcent / 100)
                             take_profit_price = precio_de_entrada * (1 - tp_porcent / 100)
-                            result_sl = establecer_stop_loss2(symbol, stop_loss_price)
-                            result_tp = establecer_take_profit2(symbol, take_profit_price, "Buy")
+                            stop_loss_long = establecer_stop_loss_dinamico(df, tipo_trade='long')
+                            result_sl = establecer_stop_loss2(symbol, stop_loss_long)
+                            take_profit_long = establecer_take_profit_dinamico(df, tipo_trade='long')
+                            result_tp = establecer_take_profit2(symbol, take_profit_long, "Buy")
                             if result_sl and result_tp:
                                 logger(f"{symbol} Stop loss y take profit activados")
                                 
@@ -1203,25 +1224,21 @@ def operar8(simbolos):
                     ticker = client.get_tickers(category='linear', symbol=symbol)
                     precio = float(ticker['result']['list'][0]['lastPrice'])
 
+                    if bucle_cnt >= random.randint(200, 300):
+                        sr = get_syr(symbol)
+                        bucle_cnt = 0
 
-                    martillo_alcista,patrona1,patrona2,patrona3 = vela_martillo_alcista(open_prices, high_prices, low_prices, close_prices)
-                    martillo_bajista,patronb1 ,patronb2, patronb3 = vela_martillo_bajista(open_prices, high_prices, low_prices, close_prices)
-
-                    # logger(str(patrona1))
-                    # logger(str(patrona2))
-                    # logger(str(patrona3))
-                    # logger(str(patronb1))
-                    # logger(str(patronb2))
-                    # logger(str(patronb3))
+                    signal_long  = detectar_reversion_alcista(df, sr['soportes_total'])
+                    signal_short  = detectar_reversion_bajista(df, sr['resistencias_total'])
 
                     rsi = talib.RSI(close_prices, timeperiod=14)
 
 
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.0f}\tb:{martillo_bajista}\ta:{martillo_alcista}"
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tb:{signal_short}\ta:{signal_long}"
                     logger(log_message)
                 
                         
-                    if martillo_bajista and rsi[-1] > top_rsi:
+                    if signal_short.iloc[-1] == 1:
 
                         if len(opened_positions_short) >= max_ops_short:
                             logger(f"{symbol:<18} operaciones abiertas en short {len(opened_positions_short)} | maximo configurado es {max_ops_short}.")
@@ -1251,7 +1268,7 @@ def operar8(simbolos):
                             hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas_0, args=(symbol, precio_entrada, "Sell", qty))
                             hilo_monitoreo.start()
 
-                    if martillo_alcista and rsi[-1] < bottom_rsi:
+                    if signal_long.iloc[-1] == 1:
 
                         if len(opened_positions_long) >= max_ops_long:
                             logger(f"{symbol:<18} operaciones abiertas en long {len(opened_positions_long)} | maximo configurado es {max_ops_long}.")
@@ -1278,7 +1295,7 @@ def operar8(simbolos):
                         if monitoring == 1:
                             # Iniciar el monitoreo de la operación
                             precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
-                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Buy", qty))
+                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas_0, args=(symbol, precio_entrada, "Buy", qty))
                             hilo_monitoreo.start()
 
             except Exception as e:
@@ -1364,6 +1381,7 @@ if strategy == 7:
 if strategy == 8: # martillo
     hilos = []
     for simbolo in otros_simbolos:
-        hilo = threading.Thread(target=operar8, args=([simbolo],))
+        item = get_syr(simbolo)
+        hilo = threading.Thread(target=operar8, args=([simbolo],item,)) 
         hilo.start()
 

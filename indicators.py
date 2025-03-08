@@ -474,3 +474,188 @@ def confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, patron_ultimo,
 
     return False,cerca_soporte_resistencia,volumen_aumento,price_in_bollinger_upper,UpperBandDiff,LowerBandDiff,UpperTolerance,LowerTolerance
 
+def detectar_reversion_alcista(df, soportes):
+    """
+    Detecta señales de reversión alcista en velas de 5 minutos usando TA-Lib,
+    confirmando con ADX y soportes.
+
+    Parámetros:
+    - df: DataFrame con columnas ['open', 'high', 'low', 'close', 'volume']
+    - soportes: Lista de precios que se consideran soportes clave.
+
+    Retorna:
+    - Un array con señales: 1 (reversión alcista detectada) o 0 (sin señal)
+    """
+
+    # Detectar patrones de reversión alcista
+    hammer = talib.CDLHAMMER(df['open'], df['high'], df['low'], df['close'])
+    inverted_hammer = talib.CDLINVERTEDHAMMER(df['open'], df['high'], df['low'], df['close'])
+    engulfing = talib.CDLENGULFING(df['open'], df['high'], df['low'], df['close'])
+    piercing = talib.CDLPIERCING(df['open'], df['high'], df['low'], df['close'])
+
+    # Calcular RSI
+    rsi = talib.RSI(df['close'], timeperiod=14)
+
+    # Calcular medias móviles
+    sma_50 = talib.SMA(df['close'], timeperiod=50)
+    sma_200 = talib.SMA(df['close'], timeperiod=200)
+
+    # Confirmar volumen alto
+    avg_volume = df['volume'].rolling(window=20).mean()
+    volumen_alto = df['volume'] > avg_volume
+
+    # Calcular ADX para confirmar fuerza de tendencia
+    adx = talib.ADX(df['high'], df['low'], df['close'], timeperiod=14)
+    tendencia_fuerte = adx > 25  # Solo operar si hay tendencia fuerte
+
+    # Confirmar si el precio está cerca de un soporte
+    precio_actual = df['close'].iloc[-1]
+    cerca_de_soporte = any(abs(precio_actual - s) / s < 0.01 for s in soportes)  # Margen del 1%
+
+    # Condición para una fuerte reversión alcista
+    reversion_alcista = (
+        ((hammer == 100) | (inverted_hammer == 100) | (engulfing == 100) | (piercing == 100)) &
+        (rsi < 30) &  # Confirmar sobreventa
+        (volumen_alto) &
+        (sma_50 < sma_200) &  # Confirmar tendencia bajista previa
+        tendencia_fuerte &  # Solo operar si hay una tendencia fuerte
+        cerca_de_soporte  # Solo operar en soportes clave
+    ).astype(int)
+
+    return reversion_alcista
+
+
+def detectar_reversion_bajista(df, resistencias):
+    """
+    Detecta señales de reversión bajista en velas de 5 minutos usando TA-Lib,
+    confirmando con ADX y resistencias.
+
+    Parámetros:
+    - df: DataFrame con columnas ['open', 'high', 'low', 'close', 'volume']
+    - resistencias: Lista de precios que se consideran resistencias clave.
+
+    Retorna:
+    - Un array con señales: 1 (reversión bajista detectada) o 0 (sin señal)
+    """
+
+    # Detectar patrones de reversión bajista
+    shooting_star = talib.CDLSHOOTINGSTAR(df['open'], df['high'], df['low'], df['close'])
+    hanging_man = talib.CDLHANGINGMAN(df['open'], df['high'], df['low'], df['close'])
+    engulfing = talib.CDLENGULFING(df['open'], df['high'], df['low'], df['close'])
+    dark_cloud = talib.CDLDARKCLOUDCOVER(df['open'], df['high'], df['low'], df['close'])
+
+    # Calcular RSI
+    rsi = talib.RSI(df['close'], timeperiod=14)
+
+    # Calcular medias móviles
+    sma_50 = talib.SMA(df['close'], timeperiod=50)
+    sma_200 = talib.SMA(df['close'], timeperiod=200)
+
+    # Confirmar volumen alto
+    avg_volume = df['volume'].rolling(window=20).mean()
+    volumen_alto = df['volume'] > avg_volume
+
+    # Calcular ADX para confirmar fuerza de tendencia
+    adx = talib.ADX(df['high'], df['low'], df['close'], timeperiod=14)
+    tendencia_fuerte = adx > 25  # Solo operar si hay tendencia fuerte
+
+    # Confirmar si el precio está cerca de una resistencia
+    precio_actual = df['close'].iloc[-1]
+    cerca_de_resistencia = any(abs(precio_actual - r) / r < 0.01 for r in resistencias)  # Margen del 1%
+
+    # Condición para una fuerte reversión bajista
+    reversion_bajista = (
+        ((shooting_star == 100) | (hanging_man == 100) | (engulfing == -100) | (dark_cloud == -100)) &
+        (rsi > 70) &  # Confirmar sobrecompra
+        (volumen_alto) &
+        (sma_50 > sma_200) &  # Confirmar tendencia alcista previa
+        tendencia_fuerte &  # Solo operar si hay una tendencia fuerte
+        cerca_de_resistencia  # Solo operar en resistencias clave
+    ).astype(int)
+
+    return reversion_bajista
+
+
+
+def calcular_atr(df, periodo=14):
+    """
+    Calcula el ATR (Average True Range) para la volatilidad.
+    
+    Parámetros:
+    - df: DataFrame con columnas ['open', 'high', 'low', 'close']
+    - periodo: El período para el cálculo del ATR
+    
+    Retorna:
+    - ATR: El valor del ATR para cada vela
+    """
+    atr = talib.ATR(df['high'], df['low'], df['close'], timeperiod=periodo)
+    return atr
+
+def establecer_stop_loss_dinamico(df, tipo_trade, multiplicador_atr=1.5):
+    """
+    Establece un stop loss dinámico basado en el ATR.
+    
+    Parámetros:
+    - df: DataFrame con columnas ['open', 'high', 'low', 'close']
+    - tipo_trade: 'long' o 'short', dependiendo de la operación
+    - multiplicador_atr: Factor para ajustar el tamaño del stop loss en función de la volatilidad
+    
+    Retorna:
+    - stop_loss: El precio del stop loss dinámico ajustado
+    """
+    # Calcular el ATR
+    atr = calcular_atr(df)
+    
+    # Usar el ATR más reciente para ajustar el stop loss
+    atr_actual = atr.iloc[-1]
+    
+    if tipo_trade == 'long':
+        # Colocar el stop loss debajo del mínimo de la vela, ajustado por el ATR
+        stop_loss = df['close'].iloc[-1] - (atr_actual * multiplicador_atr)
+    elif tipo_trade == 'short':
+        # Colocar el stop loss encima del máximo de la vela, ajustado por el ATR
+        stop_loss = df['close'].iloc[-1] + (atr_actual * multiplicador_atr)
+    
+    return stop_loss
+
+
+def calcular_atr(df, periodo=14):
+    """
+    Calcula el ATR (Average True Range) para la volatilidad.
+    
+    Parámetros:
+    - df: DataFrame con columnas ['open', 'high', 'low', 'close']
+    - periodo: El período para el cálculo del ATR
+    
+    Retorna:
+    - ATR: El valor del ATR para cada vela
+    """
+    atr = talib.ATR(df['high'], df['low'], df['close'], timeperiod=periodo)
+    return atr
+
+def establecer_take_profit_dinamico(df, tipo_trade, multiplicador_atr=2.0):
+    """
+    Establece un take profit dinámico basado en el ATR.
+    
+    Parámetros:
+    - df: DataFrame con columnas ['open', 'high', 'low', 'close']
+    - tipo_trade: 'long' o 'short', dependiendo de la operación
+    - multiplicador_atr: Factor para ajustar el tamaño del take profit en función de la volatilidad
+    
+    Retorna:
+    - take_profit: El precio del take profit dinámico ajustado
+    """
+    # Calcular el ATR
+    atr = calcular_atr(df)
+    
+    # Usar el ATR más reciente para ajustar el take profit
+    atr_actual = atr.iloc[-1]
+    
+    if tipo_trade == 'long':
+        # Colocar el take profit por encima del precio de cierre, ajustado por el ATR
+        take_profit = df['close'].iloc[-1] + (atr_actual * multiplicador_atr)
+    elif tipo_trade == 'short':
+        # Colocar el take profit por debajo del precio de cierre, ajustado por el ATR
+        take_profit = df['close'].iloc[-1] - (atr_actual * multiplicador_atr)
+    
+    return take_profit

@@ -1165,9 +1165,9 @@ def operar8(simbolos,sr):
                         if posiciones['result']['list'][0]['side']  == 'Buy':
                             stop_loss_price = precio_de_entrada * (1 - sl_porcent / 100)
                             take_profit_price = precio_de_entrada * (1 + tp_porcent / 100)
-                            stop_loss_short = establecer_stop_loss_dinamico(df, tipo_trade='short')
+                            stop_loss_short = establecer_stop_loss_dinamico(df, tipo_trade='short', timeframe=timeframe)
+                            take_profit_short = establecer_take_profit_dinamico(df, tipo_trade='short', timeframe=timeframe)
                             result_sl = establecer_stop_loss2(symbol, stop_loss_short)
-                            take_profit_short = establecer_take_profit_dinamico(df, tipo_trade='short')
                             result_tp = establecer_take_profit2(symbol,take_profit_short, "Sell")
                             if result_sl and result_tp:
                                 logger(f"{symbol} Stop loss y take profit activados")
@@ -1175,9 +1175,9 @@ def operar8(simbolos,sr):
                         else:
                             stop_loss_price = precio_de_entrada * (1 + sl_porcent / 100)
                             take_profit_price = precio_de_entrada * (1 - tp_porcent / 100)
-                            stop_loss_long = establecer_stop_loss_dinamico(df, tipo_trade='long')
+                            stop_loss_long = establecer_stop_loss_dinamico(df, tipo_trade='long', timeframe=timeframe)
+                            take_profit_long = establecer_take_profit_dinamico(df, tipo_trade='long', timeframe=timeframe)
                             result_sl = establecer_stop_loss2(symbol, stop_loss_long)
-                            take_profit_long = establecer_take_profit_dinamico(df, tipo_trade='long')
                             result_tp = establecer_take_profit2(symbol, take_profit_long, "Buy")
                             if result_sl and result_tp:
                                 logger(f"{symbol} Stop loss y take profit activados")
@@ -1224,7 +1224,7 @@ def operar8(simbolos,sr):
                     ticker = client.get_tickers(category='linear', symbol=symbol)
                     precio = float(ticker['result']['list'][0]['lastPrice'])
 
-                    if bucle_cnt >= random.randint(200, 300):
+                    if bucle_cnt >= random.randint(100, 150):
                         sr = get_syr(symbol)
                         bucle_cnt = 0
 
@@ -1234,7 +1234,7 @@ def operar8(simbolos,sr):
                     rsi = talib.RSI(close_prices, timeperiod=14)
 
 
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tb:{signal_short}\ta:{signal_long}"
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tb:{signal_short.iloc[-1]}\ta:{signal_long.iloc[-1]}"
                     logger(log_message)
                 
                         

@@ -18,7 +18,7 @@ def calcular_bandas_bollinger(data, ventana=14, desviacion=2):
 
 def calcular_ema(data, ventana=20):
     try:
-        ema = data.ewm(span=ventana, adjust=False).mean()
+        ema = data['close'].ewm(span=ventana, adjust=False).mean()
         return ema.iloc[-1]
     except Exception as e:
         print(f"Error al calcular la EMA: {e}")
@@ -165,6 +165,14 @@ def calcular_macd(closes, fastperiod=12, slowperiod=26, signalperiod=9):
     macd, macdsignal, macdhist = talib.MACD(np.array(closes), fastperiod=fastperiod, slowperiod=slowperiod, signalperiod=signalperiod)
     return macd[-1], macdsignal[-1], macdhist[-1], macd[-2], macdsignal[-2], macdhist[-2]
 
+
+def vela_martillo_alcista(open_prices, high_prices, low_prices, close_prices):
+    patron = talib.CDLHAMMER(open_prices, high_prices, low_prices, close_prices)
+    return patron[-1] > 0, close_prices[-1], close_prices[-2], close_prices[-3]
+
+def vela_martillo_bajista(open_prices, high_prices, low_prices, close_prices):
+    patron = talib.CDLINVERTEDHAMMER(open_prices, high_prices, low_prices, close_prices)
+    return patron[-1] > 0, close_prices[-1], close_prices[-2], close_prices[-3]
 
 
 def patron_velas_alcistas(open_prices, high_prices, low_prices, close_prices):
@@ -465,5 +473,4 @@ def confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, patron_ultimo,
             return True,cerca_soporte_resistencia,volumen_aumento,price_in_bollinger_upper,UpperBandDiff,LowerBandDiff,UpperTolerance,LowerTolerance  # Confirmación de patrón bajista
 
     return False,cerca_soporte_resistencia,volumen_aumento,price_in_bollinger_upper,UpperBandDiff,LowerBandDiff,UpperTolerance,LowerTolerance
-
 

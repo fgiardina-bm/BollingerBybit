@@ -626,6 +626,40 @@ def analizar_posible_orden_patron_velas(symbol, side, order_type, qty, bollinger
         time.sleep(random.randint(int(sleep_rand_from/4), int(sleep_rand_to/4)))
 
 
+def monitorear_operaciones_abiertas_0(symbol, precio_entrada, side, qty):
+    global test_mode
+
+    pe = precio_entrada
+    while True:
+        try:
+            posiciones = client.get_positions(category="linear", symbol=symbol)
+            if float(posiciones['result']['list'][0]['size']) != 0:
+                precio_actual = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
+                logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} - Precio actual: {precio_actual} - Precio de entrada: {precio_entrada}")
+                if side == 'Buy':
+                    if precio_actual > (pe):
+                        nuevo_stop_loss = precio_actual * (1 - sl_callback_percentage / 100)
+                        establecer_stop_loss(symbol, nuevo_stop_loss)
+                        pe = precio_actual
+                        logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Buy")
+                else:
+                    if precio_actual < (pe):
+                        nuevo_stop_loss = precio_actual * (1 + sl_callback_percentage / 100)
+                        establecer_stop_loss(symbol, nuevo_stop_loss)
+                        pe = precio_actual
+                        logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Sell")
+            else:
+                logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} No hay posiciones abiertas en {symbol}. Saliendo del monitoreo.")
+                break
+
+            time.sleep(random.randint(int(sleep_rand_from/4), int(sleep_rand_to/4)))
+        except Exception as e:
+            logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Error al monitorear la operación en {symbol}: {e}")
+            break
+
+
+
+
 def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):
     global test_mode
 
@@ -949,3 +983,47 @@ def hay_acumulacion_ventas(symbol: str, resistencia: float, bids, asks , toleran
     except Exception as e:
         print(f"⚠️ Error al obtener datos: {e}")
         return False,0,0
+
+def get_open_interest(symbol: str):
+    global timeframe
+    """
+    Obtiene el Open Interest para un símbolo en Bybit y determina su tendencia.
+    
+    :param symbol: Símbolo de la criptomoneda (ej. "BTCUSDT")
+    :param interval: Intervalo de tiempo en minutos para el historial (ej. 5, 15, 30, 60)
+    :return: Dirección de la tendencia ("Subiendo", "Bajando" o "Sin cambios")
+    """
+    try:
+        response = client.get_open_interest(
+            category="linear",
+            symbol=symbol,
+            intervalTime="5min"
+        )
+        
+        if "result" not in response:
+            return "Error en la respuesta de la API"
+        
+        data = response["result"]["list"]
+        
+        if not data:
+            return "No hay datos disponibles"
+        
+        # Convertir datos a DataFrame para análisis
+        df = pd.DataFrame(data)
+        df["openInterest"] = df["openInterest"].astype(float)
+
+        # Verificar si el Open Interest está subiendo o bajando
+        oi_actual = df["openInterest"].iloc[-1]
+        oi_anterior = df["openInterest"].iloc[-2]
+
+        if oi_actual > oi_anterior:
+            return "Subiendo"
+        elif oi_actual < oi_anterior:
+            return "Bajando"
+        else:
+            return "Sin cambios"
+       
+    
+    except Exception as e:
+        logger(f"Error: {str(e)}") 
+        return None

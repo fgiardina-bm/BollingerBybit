@@ -3,7 +3,7 @@ services:
     image: fgiardina/bbpy:latest
     container_name: bbpy
     restart: always
-    tty: true
+    # stdin_open: true
     env_file:
       - ./.prod.env
     volumes:

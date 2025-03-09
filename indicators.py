@@ -634,10 +634,10 @@ def establecer_stop_loss_dinamico(df, tipo_trade, timeframe, multiplicador_atr=N
     
     if tipo_trade == 'long':
         # Colocar el stop loss debajo del mínimo de la vela, ajustado por el ATR
-        stop_loss = df['close'].iloc[-1] - (atr_actual * multiplicador_atr)
+        stop_loss = df['close'].iloc[-1] - ((atr_actual * multiplicador_atr) / 2)
     elif tipo_trade == 'short':
         # Colocar el stop loss encima del máximo de la vela, ajustado por el ATR
-        stop_loss = df['close'].iloc[-1] + (atr_actual * multiplicador_atr)
+        stop_loss = df['close'].iloc[-1] + ((atr_actual * multiplicador_atr) / 2)
     
     return stop_loss,atr_actual,multiplicador_atr,df['close'].iloc[-1]
 

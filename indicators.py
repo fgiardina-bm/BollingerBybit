@@ -474,6 +474,103 @@ def confirmar_patron_con_soporte_resistencia_3niveles(symbol, df, patron_ultimo,
 
     return False,cerca_soporte_resistencia,volumen_aumento,price_in_bollinger_upper,UpperBandDiff,LowerBandDiff,UpperTolerance,LowerTolerance
 
+def calcular_atr(df, periodo=14):
+    """
+    Calcula el ATR (Average True Range) para la volatilidad.
+    
+    Parámetros:
+    - df: DataFrame con columnas ['open', 'high', 'low', 'close']
+    - periodo: El período para el cálculo del ATR
+    
+    Retorna:
+    - ATR: El valor del ATR para cada vela
+    """
+    atr = talib.ATR(df['high'], df['low'], df['close'], timeperiod=periodo)
+    return atr
+
+def obtener_multiplicador_atr(timeframe):
+    """
+    Ajusta el multiplicador del ATR basado en el timeframe.
+    
+    Parámetros:
+    - timeframe: El timeframe de la operación (por ejemplo, '5m', '15m', '1h', '4h')
+    
+    Retorna:
+    - multiplicador_atr: El multiplicador ajustado para el ATR basado en el timeframe
+    """
+    if timeframe == '5' or timeframe == '15':
+        return 2.5  # Múltiplo más grande para timeframes más cortos
+    elif timeframe == '60':
+        return 1.5  # Múltiplo medio para timeframes más largos
+    elif timeframe == '240':
+        return 1.2  # Múltiplo más pequeño para timeframes largos
+    else:
+        return 1.5  # Valor predeterminado para otros timeframes
+
+def establecer_stop_loss_dinamico(df, tipo_trade, timeframe, multiplicador_atr=None):
+    """
+    Establece un stop loss dinámico basado en el ATR y el timeframe.
+    
+    Parámetros:
+    - df: DataFrame con columnas ['open', 'high', 'low', 'close']
+    - tipo_trade: 'long' o 'short', dependiendo de la operación
+    - timeframe: Timeframe de la operación (e.g. '5m', '1h', '4h')
+    - multiplicador_atr: Factor para ajustar el tamaño del stop loss en función de la volatilidad
+    
+    Retorna:
+    - stop_loss: El precio del stop loss dinámico ajustado
+    """
+    if multiplicador_atr is None:
+        multiplicador_atr = obtener_multiplicador_atr(timeframe)
+    
+    # Calcular el ATR
+    atr = calcular_atr(df)
+    
+    # Usar el ATR más reciente para ajustar el stop loss
+    atr_actual = atr.iloc[-1]
+    
+    if tipo_trade == 'long':
+        # Colocar el stop loss debajo del mínimo de la vela, ajustado por el ATR
+        stop_loss = df['close'].iloc[-1] - ((atr_actual * multiplicador_atr) / 2)
+    elif tipo_trade == 'short':
+        # Colocar el stop loss encima del máximo de la vela, ajustado por el ATR
+        stop_loss = df['close'].iloc[-1] + ((atr_actual * multiplicador_atr) / 2)
+    
+    return stop_loss,atr_actual,multiplicador_atr,df['close'].iloc[-1]
+
+def establecer_take_profit_dinamico(df, tipo_trade, timeframe, multiplicador_atr=None):
+    """
+    Establece un take profit dinámico basado en el ATR y el timeframe.
+    
+    Parámetros:
+    - df: DataFrame con columnas ['open', 'high', 'low', 'close']
+    - tipo_trade: 'long' o 'short', dependiendo de la operación
+    - timeframe: Timeframe de la operación (e.g. '5m', '1h', '4h')
+    - multiplicador_atr: Factor para ajustar el tamaño del take profit en función de la volatilidad
+    
+    Retorna:
+    - take_profit: El precio del take profit dinámico ajustado
+    """
+    if multiplicador_atr is None:
+        multiplicador_atr = obtener_multiplicador_atr(timeframe)
+    
+    # Calcular el ATR
+    atr = calcular_atr(df)
+    
+    # Usar el ATR más reciente para ajustar el take profit
+    atr_actual = atr.iloc[-1]
+    
+    if tipo_trade == 'long':
+        # Colocar el take profit por encima del precio de cierre, ajustado por el ATR
+        take_profit = df['close'].iloc[-1] + (atr_actual * multiplicador_atr)
+    elif tipo_trade == 'short':
+        # Colocar el take profit por debajo del precio de cierre, ajustado por el ATR
+        take_profit = df['close'].iloc[-1] - (atr_actual * multiplicador_atr)
+    
+    return take_profit,atr_actual,multiplicador_atr,df['close'].iloc[-1]
+
+
+
 def detectar_reversion_alcista(df, soportes):
     """
     Detecta señales de reversión alcista en velas de 5 minutos usando TA-Lib,
@@ -576,98 +673,3 @@ def detectar_reversion_bajista(df, resistencias):
     return reversion_bajista
 
 
-
-def calcular_atr(df, periodo=14):
-    """
-    Calcula el ATR (Average True Range) para la volatilidad.
-    
-    Parámetros:
-    - df: DataFrame con columnas ['open', 'high', 'low', 'close']
-    - periodo: El período para el cálculo del ATR
-    
-    Retorna:
-    - ATR: El valor del ATR para cada vela
-    """
-    atr = talib.ATR(df['high'], df['low'], df['close'], timeperiod=periodo)
-    return atr
-
-def obtener_multiplicador_atr(timeframe):
-    """
-    Ajusta el multiplicador del ATR basado en el timeframe.
-    
-    Parámetros:
-    - timeframe: El timeframe de la operación (por ejemplo, '5m', '15m', '1h', '4h')
-    
-    Retorna:
-    - multiplicador_atr: El multiplicador ajustado para el ATR basado en el timeframe
-    """
-    if timeframe == '5' or timeframe == '15':
-        return 2.5  # Múltiplo más grande para timeframes más cortos
-    elif timeframe == '60':
-        return 1.5  # Múltiplo medio para timeframes más largos
-    elif timeframe == '240':
-        return 1.2  # Múltiplo más pequeño para timeframes largos
-    else:
-        return 1.5  # Valor predeterminado para otros timeframes
-
-def establecer_stop_loss_dinamico(df, tipo_trade, timeframe, multiplicador_atr=None):
-    """
-    Establece un stop loss dinámico basado en el ATR y el timeframe.
-    
-    Parámetros:
-    - df: DataFrame con columnas ['open', 'high', 'low', 'close']
-    - tipo_trade: 'long' o 'short', dependiendo de la operación
-    - timeframe: Timeframe de la operación (e.g. '5m', '1h', '4h')
-    - multiplicador_atr: Factor para ajustar el tamaño del stop loss en función de la volatilidad
-    
-    Retorna:
-    - stop_loss: El precio del stop loss dinámico ajustado
-    """
-    if multiplicador_atr is None:
-        multiplicador_atr = obtener_multiplicador_atr(timeframe)
-    
-    # Calcular el ATR
-    atr = calcular_atr(df)
-    
-    # Usar el ATR más reciente para ajustar el stop loss
-    atr_actual = atr.iloc[-1]
-    
-    if tipo_trade == 'long':
-        # Colocar el stop loss debajo del mínimo de la vela, ajustado por el ATR
-        stop_loss = df['close'].iloc[-1] - ((atr_actual * multiplicador_atr) / 2)
-    elif tipo_trade == 'short':
-        # Colocar el stop loss encima del máximo de la vela, ajustado por el ATR
-        stop_loss = df['close'].iloc[-1] + ((atr_actual * multiplicador_atr) / 2)
-    
-    return stop_loss,atr_actual,multiplicador_atr,df['close'].iloc[-1]
-
-def establecer_take_profit_dinamico(df, tipo_trade, timeframe, multiplicador_atr=None):
-    """
-    Establece un take profit dinámico basado en el ATR y el timeframe.
-    
-    Parámetros:
-    - df: DataFrame con columnas ['open', 'high', 'low', 'close']
-    - tipo_trade: 'long' o 'short', dependiendo de la operación
-    - timeframe: Timeframe de la operación (e.g. '5m', '1h', '4h')
-    - multiplicador_atr: Factor para ajustar el tamaño del take profit en función de la volatilidad
-    
-    Retorna:
-    - take_profit: El precio del take profit dinámico ajustado
-    """
-    if multiplicador_atr is None:
-        multiplicador_atr = obtener_multiplicador_atr(timeframe)
-    
-    # Calcular el ATR
-    atr = calcular_atr(df)
-    
-    # Usar el ATR más reciente para ajustar el take profit
-    atr_actual = atr.iloc[-1]
-    
-    if tipo_trade == 'long':
-        # Colocar el take profit por encima del precio de cierre, ajustado por el ATR
-        take_profit = df['close'].iloc[-1] + (atr_actual * multiplicador_atr)
-    elif tipo_trade == 'short':
-        # Colocar el take profit por debajo del precio de cierre, ajustado por el ATR
-        take_profit = df['close'].iloc[-1] - (atr_actual * multiplicador_atr)
-    
-    return take_profit,atr_actual,multiplicador_atr,df['close'].iloc[-1]

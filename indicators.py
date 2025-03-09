@@ -639,7 +639,7 @@ def establecer_stop_loss_dinamico(df, tipo_trade, timeframe, multiplicador_atr=N
         # Colocar el stop loss encima del máximo de la vela, ajustado por el ATR
         stop_loss = df['close'].iloc[-1] + (atr_actual * multiplicador_atr)
     
-    return stop_loss
+    return stop_loss,atr_actual,multiplicador_atr,df['close'].iloc[-1]
 
 def establecer_take_profit_dinamico(df, tipo_trade, timeframe, multiplicador_atr=None):
     """
@@ -670,4 +670,4 @@ def establecer_take_profit_dinamico(df, tipo_trade, timeframe, multiplicador_atr
         # Colocar el take profit por debajo del precio de cierre, ajustado por el ATR
         take_profit = df['close'].iloc[-1] - (atr_actual * multiplicador_atr)
     
-    return take_profit
+    return take_profit,atr_actual,multiplicador_atr,df['close'].iloc[-1]

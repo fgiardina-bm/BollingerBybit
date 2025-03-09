@@ -1165,8 +1165,10 @@ def operar8(simbolos,sr):
                         if posiciones['result']['list'][0]['side']  == 'Buy':
                             stop_loss_price = precio_de_entrada * (1 - sl_porcent / 100)
                             take_profit_price = precio_de_entrada * (1 + tp_porcent / 100)
-                            stop_loss_short = establecer_stop_loss_dinamico(df, tipo_trade='short', timeframe=timeframe)
-                            take_profit_short = establecer_take_profit_dinamico(df, tipo_trade='short', timeframe=timeframe)
+                            stop_loss_short,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, tipo_trade='long', timeframe=timeframe)
+                            take_profit_short,atr_actual,multiplicador_atr,lastprice = establecer_take_profit_dinamico(df, tipo_trade='long', timeframe=timeframe)
+                            logger(f"{symbol} stop_loss_short: {stop_loss_short} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
+                            logger(f"{symbol} take_profit_short: {take_profit_short} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             result_sl = establecer_stop_loss2(symbol, stop_loss_short)
                             result_tp = establecer_take_profit2(symbol,take_profit_short, "Sell")
                             if result_sl and result_tp:
@@ -1175,8 +1177,10 @@ def operar8(simbolos,sr):
                         else:
                             stop_loss_price = precio_de_entrada * (1 + sl_porcent / 100)
                             take_profit_price = precio_de_entrada * (1 - tp_porcent / 100)
-                            stop_loss_long = establecer_stop_loss_dinamico(df, tipo_trade='long', timeframe=timeframe)
-                            take_profit_long = establecer_take_profit_dinamico(df, tipo_trade='long', timeframe=timeframe)
+                            stop_loss_long,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, tipo_trade='short', timeframe=timeframe)
+                            take_profit_long,atr_actual,multiplicador_atr,lastprice = establecer_take_profit_dinamico(df, tipo_trade='short', timeframe=timeframe)
+                            logger(f"{symbol} stop_loss_long: {stop_loss_long} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
+                            logger(f"{symbol} take_profit_long: {take_profit_long} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             result_sl = establecer_stop_loss2(symbol, stop_loss_long)
                             result_tp = establecer_take_profit2(symbol, take_profit_long, "Buy")
                             if result_sl and result_tp:

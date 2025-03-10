@@ -827,10 +827,10 @@ def encontrar_niveles_cercanos(niveles: np.ndarray, valor_actual: float) -> Tupl
         resistencias = niveles[niveles > valor_actual]
 
         # Tomar los dos soportes más cercanos (ordenados de mayor a menor)
-        soportes_cercanos = np.sort(soportes)[-2:] if len(soportes) >= 2 else soportes
+        soportes_cercanos = np.sort(soportes)[-3:] if len(soportes) >= 3 else soportes
         
         # Tomar las dos resistencias más cercanas (ordenados de menor a mayor)
-        resistencias_cercanas = np.sort(resistencias)[:2] if len(resistencias) >= 2 else resistencias
+        resistencias_cercanas = np.sort(resistencias)[:3] if len(resistencias) >= 3 else resistencias
 
         return soportes_cercanos, resistencias_cercanas
 

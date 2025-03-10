@@ -98,7 +98,8 @@ class SoportesResistencias:
         
     def encontrar_niveles_cercanos(self, 
                                   niveles: np.ndarray, 
-                                  valor_actual: float) -> Tuple[np.ndarray, np.ndarray]:
+                                  valor_actual: float,
+                                  cnt: int) -> Tuple[np.ndarray, np.ndarray]:
         """
         Encuentra los dos soportes y dos resistencias más cercanas al valor actual.
         
@@ -114,10 +115,10 @@ class SoportesResistencias:
         resistencias = niveles[niveles > valor_actual]
 
         # Tomar los dos soportes más cercanos (ordenados de mayor a menor)
-        soportes_cercanos = np.sort(soportes)[-2:] if len(soportes) >= 2 else soportes
+        soportes_cercanos = np.sort(soportes)[-cnt:] if len(soportes) >= cnt else soportes
         
         # Tomar las dos resistencias más cercanas (ordenados de menor a mayor)
-        resistencias_cercanas = np.sort(resistencias)[:2] if len(resistencias) >= 2 else resistencias
+        resistencias_cercanas = np.sort(resistencias)[:cnt] if len(resistencias) >= cnt else resistencias
 
         return soportes_cercanos, resistencias_cercanas
     
@@ -347,7 +348,7 @@ def main() -> None:
         
         # Encontrar soportes y resistencias cercanos
         logger.info("Identificando soportes y resistencias cercanos")
-        soportes_cercanos, resistencias_cercanas = sr.encontrar_niveles_cercanos(niveles_finales, valor_actual)
+        soportes_cercanos, resistencias_cercanas = sr.encontrar_niveles_cercanos(niveles_finales, valor_actual, 3)
         
         # Mostrar resultados
         print(f"\nAnálisis de soporte y resistencia para {symbol}")

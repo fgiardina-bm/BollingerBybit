@@ -507,7 +507,7 @@ def obtener_multiplicador_atr(timeframe):
     else:
         return 1.5  # Valor predeterminado para otros timeframes
 
-def establecer_stop_loss_dinamico(df, tipo_trade, timeframe, multiplicador_atr=None):
+def establecer_stop_loss_dinamico(df, divisor_sl, tipo_trade, timeframe, multiplicador_atr=None):
     """
     Establece un stop loss dinámico basado en el ATR y el timeframe.
     
@@ -531,10 +531,10 @@ def establecer_stop_loss_dinamico(df, tipo_trade, timeframe, multiplicador_atr=N
     
     if tipo_trade == 'long':
         # Colocar el stop loss debajo del mínimo de la vela, ajustado por el ATR
-        stop_loss = df['close'].iloc[-1] - (atr_actual * multiplicador_atr)
+        stop_loss = df['close'].iloc[-1] - ((atr_actual * multiplicador_atr) / divisor_sl)
     elif tipo_trade == 'short':
         # Colocar el stop loss encima del máximo de la vela, ajustado por el ATR
-        stop_loss = df['close'].iloc[-1] + (atr_actual * multiplicador_atr)
+        stop_loss = df['close'].iloc[-1] + ((atr_actual * multiplicador_atr) / divisor_sl)
     
     return stop_loss,atr_actual,multiplicador_atr,df['close'].iloc[-1]
 
@@ -615,7 +615,7 @@ def detectar_reversion_alcista(df, soportes):
         (rsi < 30) &  # Confirmar sobreventa
         (volumen_alto) &
         (sma_50 < sma_200) &  # Confirmar tendencia bajista previa
-        tendencia_fuerte &  # Solo operar si hay una tendencia fuerte
+        # tendencia_fuerte &  # Solo operar si hay una tendencia fuerte
         cerca_de_soporte  # Solo operar en soportes clave
     ).astype(int)
 
@@ -664,7 +664,7 @@ def detectar_reversion_bajista(df, resistencias):
     reversion_bajista = (
         ((shooting_star == 100) | (hanging_man == 100) | (engulfing == -100) | (dark_cloud == -100)) &
         (rsi > 70) &  # Confirmar sobrecompra
-        (volumen_alto) &
+        # (volumen_alto) &
         (sma_50 > sma_200) &  # Confirmar tendencia alcista previa
         tendencia_fuerte &  # Solo operar si hay una tendencia fuerte
         cerca_de_resistencia  # Solo operar en resistencias clave

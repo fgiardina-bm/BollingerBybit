@@ -1166,8 +1166,8 @@ def operar8(simbolos,sr):
                         if posiciones['result']['list'][0]['side']  == 'Buy':
                             stop_loss_price = precio_de_entrada * (1 - sl_porcent / 100)
                             take_profit_price = precio_de_entrada * (1 + tp_porcent / 100)
-                            stop_loss_short,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, divisor_sl,tipo_trade='long', timeframe=timeframe)
-                            take_profit_short,atr_actual,multiplicador_atr,lastprice = establecer_take_profit_dinamico(df, tipo_trade='long', timeframe=timeframe)
+                            stop_loss_short,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, divisor_sl, tipo_trade='long', timeframe=timeframe)
+                            take_profit_short,atr_actual,multiplicador_atr,lastprice = establecer_take_profit_dinamico(df, divisor_sl, tipo_trade='long', timeframe=timeframe)
                             logger(f"{symbol} stop_loss_short: {stop_loss_short} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             logger(f"{symbol} take_profit_short: {take_profit_short} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             result_sl = establecer_stop_loss2(symbol, stop_loss_short)
@@ -1178,8 +1178,8 @@ def operar8(simbolos,sr):
                         else:
                             stop_loss_price = precio_de_entrada * (1 + sl_porcent / 100)
                             take_profit_price = precio_de_entrada * (1 - tp_porcent / 100)
-                            stop_loss_long,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, tipo_trade='short', timeframe=timeframe)
-                            take_profit_long,atr_actual,multiplicador_atr,lastprice = establecer_take_profit_dinamico(df, tipo_trade='short', timeframe=timeframe)
+                            stop_loss_long,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, divisor_sl, tipo_trade='short', timeframe=timeframe)
+                            take_profit_long,atr_actual,multiplicador_atr,lastprice = establecer_take_profit_dinamico(df, divisor_sl, tipo_trade='short', timeframe=timeframe)
                             logger(f"{symbol} stop_loss_long: {stop_loss_long} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             logger(f"{symbol} take_profit_long: {take_profit_long} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             result_sl = establecer_stop_loss2(symbol, stop_loss_long)
@@ -1270,7 +1270,7 @@ def operar8(simbolos,sr):
                         if monitoring == 1:
                             # Iniciar el monitoreo de la operación
                             precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
-                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas_0, args=(symbol, precio_entrada, "Sell", qty))
+                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Sell", qty))
                             hilo_monitoreo.start()
 
                     if signal_long.iloc[-1] == 1:
@@ -1300,7 +1300,7 @@ def operar8(simbolos,sr):
                         if monitoring == 1:
                             # Iniciar el monitoreo de la operación
                             precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
-                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas_0, args=(symbol, precio_entrada, "Buy", qty))
+                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Buy", qty))
                             hilo_monitoreo.start()
 
             except Exception as e:

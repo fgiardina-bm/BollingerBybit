@@ -507,7 +507,7 @@ def obtener_multiplicador_atr(timeframe):
     else:
         return 1.5  # Valor predeterminado para otros timeframes
 
-def establecer_stop_loss_dinamico(df, divisor_sl, tipo_trade, timeframe, multiplicador_atr=None):
+def establecer_stop_loss_dinamico(df, dsl, tipo_trade, timeframe, multiplicador_atr=None):
     """
     Establece un stop loss dinámico basado en el ATR y el timeframe.
     
@@ -531,14 +531,14 @@ def establecer_stop_loss_dinamico(df, divisor_sl, tipo_trade, timeframe, multipl
     
     if tipo_trade == 'long':
         # Colocar el stop loss debajo del mínimo de la vela, ajustado por el ATR
-        stop_loss = df['close'].iloc[-1] - ((atr_actual * multiplicador_atr) / divisor_sl)
+        stop_loss = df['close'].iloc[-1] - ((atr_actual * multiplicador_atr) / dsl)
     elif tipo_trade == 'short':
         # Colocar el stop loss encima del máximo de la vela, ajustado por el ATR
-        stop_loss = df['close'].iloc[-1] + ((atr_actual * multiplicador_atr) / divisor_sl)
+        stop_loss = df['close'].iloc[-1] + ((atr_actual * multiplicador_atr) / dsl)
     
     return stop_loss,atr_actual,multiplicador_atr,df['close'].iloc[-1]
 
-def establecer_take_profit_dinamico(df, tipo_trade, timeframe, multiplicador_atr=None):
+def establecer_take_profit_dinamico(df, dsl, tipo_trade, timeframe, multiplicador_atr=None):
     """
     Establece un take profit dinámico basado en el ATR y el timeframe.
     
@@ -562,10 +562,10 @@ def establecer_take_profit_dinamico(df, tipo_trade, timeframe, multiplicador_atr
     
     if tipo_trade == 'long':
         # Colocar el take profit por encima del precio de cierre, ajustado por el ATR
-        take_profit = df['close'].iloc[-1] + (atr_actual * multiplicador_atr)
+        take_profit = df['close'].iloc[-1] + ((atr_actual * multiplicador_atr) * dsl)
     elif tipo_trade == 'short':
         # Colocar el take profit por debajo del precio de cierre, ajustado por el ATR
-        take_profit = df['close'].iloc[-1] - (atr_actual * multiplicador_atr)
+        take_profit = df['close'].iloc[-1] - ((atr_actual * multiplicador_atr) * dsl)
     
     return take_profit,atr_actual,multiplicador_atr,df['close'].iloc[-1]
 
@@ -592,6 +592,11 @@ def detectar_reversion_alcista(df, soportes):
 
     # Calcular RSI
     rsi = talib.RSI(df['close'], timeperiod=14)
+    # calcular bandas de bollinger
+    upper_band, middle_band, lower_band = talib.BBANDS(df['close'], timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)
+
+
+
 
     # Calcular medias móviles
     sma_50 = talib.SMA(df['close'], timeperiod=50)
@@ -611,12 +616,13 @@ def detectar_reversion_alcista(df, soportes):
 
     # Condición para una fuerte reversión alcista
     reversion_alcista = (
-        ((hammer == 100) | (inverted_hammer == 100) | (engulfing == 100) | (piercing == 100)) &
+        (precio_actual < lower_band) &
+        # ((hammer == 100) | (inverted_hammer == 100) | (engulfing == 100) | (piercing == 100)) &
         (rsi < 30) &  # Confirmar sobreventa
-        (volumen_alto) &
-        (sma_50 < sma_200) &  # Confirmar tendencia bajista previa
-        # tendencia_fuerte &  # Solo operar si hay una tendencia fuerte
-        cerca_de_soporte  # Solo operar en soportes clave
+        # (volumen_alto) &
+        # (sma_50 < sma_200) &  # Confirmar tendencia bajista previa
+        cerca_de_soporte # Solo operar en soportes clave
+        # tendencia_fuerte  # Solo operar si hay una tendencia fuerte
     ).astype(int)
 
     return reversion_alcista
@@ -643,6 +649,8 @@ def detectar_reversion_bajista(df, resistencias):
 
     # Calcular RSI
     rsi = talib.RSI(df['close'], timeperiod=14)
+    # calcular bandas de bollinger
+    upper_band, middle_band, lower_band = talib.BBANDS(df['close'], timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)
 
     # Calcular medias móviles
     sma_50 = talib.SMA(df['close'], timeperiod=50)
@@ -662,12 +670,13 @@ def detectar_reversion_bajista(df, resistencias):
 
     # Condición para una fuerte reversión bajista
     reversion_bajista = (
-        ((shooting_star == 100) | (hanging_man == 100) | (engulfing == -100) | (dark_cloud == -100)) &
+        (precio_actual > upper_band) &
+        # ((shooting_star == 100) | (hanging_man == 100) | (engulfing == -100) | (dark_cloud == -100)) &
         (rsi > 70) &  # Confirmar sobrecompra
         # (volumen_alto) &
-        (sma_50 > sma_200) &  # Confirmar tendencia alcista previa
-        tendencia_fuerte &  # Solo operar si hay una tendencia fuerte
-        cerca_de_resistencia  # Solo operar en resistencias clave
+        # (sma_50 > sma_200) &  # Confirmar tendencia alcista previa
+        cerca_de_resistencia # Solo operar en resistencias clave
+        # tendencia_fuerte  # Solo operar si hay una tendencia fuerte
     ).astype(int)
 
     return reversion_bajista

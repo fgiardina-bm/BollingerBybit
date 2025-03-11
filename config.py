@@ -57,6 +57,7 @@ order_book_limit = int(os.getenv("ORDER_BOOK_LIMIT", 1000))
 order_book_delay_divisor = int(os.getenv("ORDER_BOOK_DELAY_DIVISOR", 1))
 black_list_symbols = os.getenv("BLACK_LIST_SYMBOLS", "BNXUSDT").split(",")
 divisor_sl = int(os.getenv("DIVISOR_SL", 2))
+sl_percentaje_account = float(os.getenv("SL_PERCENTAJE_ACCOUNT", 2.0))
 
 config_lock = threading.Lock()
 
@@ -75,6 +76,7 @@ def reload_config():
     global opened_positions, opened_positions_short, opened_positions_long
     global max_ops_short, max_ops_long, strategy, sr_fib_tolerancia, test_mode, sr_fib_velas, account_usdt_limit
     global soportes_resistencias, order_book_limit, order_book_delay_divisor, black_list_symbols, divisor_sl
+    global sl_percentaje_account
 
     config_path = ".env"
 
@@ -121,6 +123,7 @@ def reload_config():
         order_book_delay_divisor = int(os.getenv("ORDER_BOOK_DELAY_DIVISOR", 1))
         black_list_symbols = os.getenv("BLACK_LIST_SYMBOLS", "").split(",")
         divisor_sl = int(os.getenv("DIVISOR_SL", 2))
+        sl_percentaje_account = float(os.getenv("SL_PERCENTAJE_ACCOUNT", 2.0))
         soportes_resistencias = {}
 
     except ValueError as e:

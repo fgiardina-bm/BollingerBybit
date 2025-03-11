@@ -1126,7 +1126,7 @@ def operar8(simbolos,sr):
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions_long, opened_positions_short
     global max_ops_long, max_ops_short, sr_fib_tolerancia, sr_fib_velas,account_usdt_limit, order_book_limit, order_book_delay_divisor
-    global divisor_sl
+    global divisor_sl,sl_percentaje_account
 
     logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
 
@@ -1260,6 +1260,33 @@ def operar8(simbolos,sr):
                             time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                             continue
 
+                        # Calcular ATR para ajustar el tamaño de la posición
+                        atr = talib.ATR(high_prices, low_prices, close_prices, timeperiod=14)
+                        atr_actual = atr[-1]
+
+                        # Ajustar el importe de USDT según el ATR
+                        # Si el ATR es muy grande, reducimos la exposición para limitar el riesgo
+                        max_atr_riesgo = precio * 0.03  # Considera un 1% como ATR de referencia
+                        if atr_actual > max_atr_riesgo:
+                            # Reducir el importe proporcionalmente al exceso de ATR
+                            factor_reduccion = max_atr_riesgo / atr_actual
+                            usdt = usdt * factor_reduccion
+                            logger(f"{symbol} ATR elevado: {atr_actual:.5f}, reduciendo posición por factor: {factor_reduccion:.2f}")
+
+                        # Calcular el stop loss y verificar máxima pérdida
+                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, divisor_sl, tipo_trade='short', timeframe=timeframe)
+                        max_perdida_permitida = saldo_usdt * (sl_percentaje_account /  100)  # Máximo 2% del saldo total
+                        perdida_estimada = abs((precio - stop_loss_estimado) * (usdt / precio))
+
+                        if perdida_estimada > max_perdida_permitida:
+                            factor_reduccion = max_perdida_permitida / perdida_estimada
+                            usdt = usdt * factor_reduccion
+                            logger(f"{symbol} Reduciendo posición para limitar pérdida: {perdida_estimada:.2f} USDT a {max_perdida_permitida:.2f} USDT")
+
+                        if usdt < 5:
+                            logger(f"{symbol} Posición insuficiente para operar usdt: {usdt}")
+                            continue
+                        
                         precision = precision_step
                         qty = usdt / precio
                         qty = qty_precision(qty, precision)
@@ -1290,11 +1317,39 @@ def operar8(simbolos,sr):
                         if saldo_usdt < account_usdt_limit:
                             continue
 
+                        # Calcular ATR para ajustar el tamaño de la posición
+                        atr = talib.ATR(high_prices, low_prices, close_prices, timeperiod=14)
+                        atr_actual = atr[-1]
+
+                        # Ajustar el importe de USDT según el ATR
+                        # Si el ATR es muy grande, reducimos la exposición para limitar el riesgo
+                        max_atr_riesgo = precio * 0.03  # Considera un 1% como ATR de referencia
+                        if atr_actual > max_atr_riesgo:
+                            # Reducir el importe proporcionalmente al exceso de ATR
+                            factor_reduccion = max_atr_riesgo / atr_actual
+                            usdt = usdt * factor_reduccion
+                            logger(f"{symbol} ATR elevado: {atr_actual:.5f}, reduciendo posición por factor: {factor_reduccion:.2f}")
+
+                        # Calcular el stop loss y verificar máxima pérdida
+                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, divisor_sl, tipo_trade='short', timeframe=timeframe)
+                        max_perdida_permitida = saldo_usdt * (sl_percentaje_account /  100)   # Máximo 2% del saldo total
+                        perdida_estimada = abs((precio - stop_loss_estimado) * (usdt / precio))
+
+                        if perdida_estimada > max_perdida_permitida:
+                            factor_reduccion = max_perdida_permitida / perdida_estimada
+                            usdt = usdt * factor_reduccion
+                            logger(f"{symbol} Reduciendo posición para limitar pérdida: {perdida_estimada:.2f} USDT a {max_perdida_permitida:.2f} USDT")
+
+                        if usdt < 5:
+                            logger(f"{symbol} Posición insuficiente para operar usdt: {usdt}")
+                            continue
+
                         precision = precision_step
                         qty = usdt / precio
                         qty = qty_precision(qty, precision)
                         if qty.is_integer():
                             qty = int(qty)
+
                         logger(f"{symbol} Cantidad de monedas a comprar: " + str(qty))
                         crear_orden(symbol, "Buy", "Market", qty)
                         if monitoring == 1:

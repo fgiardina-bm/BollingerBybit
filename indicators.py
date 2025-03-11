@@ -571,7 +571,7 @@ def establecer_take_profit_dinamico(df, dsl, tipo_trade, timeframe, multiplicado
 
 
 
-def detectar_reversion_alcista(df, soportes):
+def detectar_reversion_alcista(df, soportes, top_rsi, bottom_rsi):
     """
     Detecta señales de reversión alcista en velas de 5 minutos usando TA-Lib,
     confirmando con ADX y soportes.
@@ -618,7 +618,7 @@ def detectar_reversion_alcista(df, soportes):
     reversion_alcista = (
         (precio_actual < lower_band) &
         # ((hammer == 100) | (inverted_hammer == 100) | (engulfing == 100) | (piercing == 100)) &
-        (rsi < 30) &  # Confirmar sobreventa
+        (rsi < bottom_rsi) &  # Confirmar sobreventa
         # (volumen_alto) &
         # (sma_50 < sma_200) &  # Confirmar tendencia bajista previa
         cerca_de_soporte # Solo operar en soportes clave
@@ -628,7 +628,7 @@ def detectar_reversion_alcista(df, soportes):
     return reversion_alcista
 
 
-def detectar_reversion_bajista(df, resistencias):
+def detectar_reversion_bajista(df, resistencias, top_rsi, bottom_rsi):
     """
     Detecta señales de reversión bajista en velas de 5 minutos usando TA-Lib,
     confirmando con ADX y resistencias.
@@ -672,7 +672,7 @@ def detectar_reversion_bajista(df, resistencias):
     reversion_bajista = (
         (precio_actual > upper_band) &
         # ((shooting_star == 100) | (hanging_man == 100) | (engulfing == -100) | (dark_cloud == -100)) &
-        (rsi > 70) &  # Confirmar sobrecompra
+        (rsi > top_rsi) &  # Confirmar sobrecompra
         # (volumen_alto) &
         # (sma_50 > sma_200) &  # Confirmar tendencia alcista previa
         cerca_de_resistencia # Solo operar en resistencias clave

@@ -1233,8 +1233,8 @@ def operar8(simbolos,sr):
                         sr = get_syr(symbol)
                         bucle_cnt = 0
 
-                    signal_long  = detectar_reversion_alcista(df, sr['soportes_total'])
-                    signal_short  = detectar_reversion_bajista(df, sr['resistencias_total'])
+                    signal_long  = detectar_reversion_alcista(df, sr['soportes_total'], top_rsi, bottom_rsi)
+                    signal_short  = detectar_reversion_bajista(df, sr['resistencias_total'], top_rsi, bottom_rsi)
 
                     rsi = talib.RSI(close_prices, timeperiod=14)
 

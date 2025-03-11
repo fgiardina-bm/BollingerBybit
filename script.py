@@ -1238,8 +1238,28 @@ def operar8(simbolos,sr):
 
                     rsi = talib.RSI(close_prices, timeperiod=14)
 
+                    # Calcular la distancia porcentual hasta el soporte más cercano
+                    closest_support = None
+                    min_distance_percent = float('inf')
+                    if len(sr['soportes_total']) > 0:
+                        for support in sr['soportes_total']:
+                            distance_percent = abs(precio - support) / precio * 100
+                            if distance_percent < min_distance_percent:
+                                min_distance_percent = distance_percent
+                                closest_support = support
 
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tb:{signal_short.iloc[-1]}\ta:{signal_long.iloc[-1]}"
+                    # Calcular la distancia porcentual hasta la resistencia más cercana
+                    closest_resistance = None
+                    min_resistance_distance = float('inf')
+                    if len(sr['resistencias_total']) > 0:
+                        for resistance in sr['resistencias_total']:
+                            distance_percent = abs(precio - resistance) / precio * 100
+                            if distance_percent < min_resistance_distance:
+                                min_resistance_distance = distance_percent
+                                closest_resistance = resistance
+
+
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tb:{signal_short.iloc[-1]}\ta:{signal_long.iloc[-1]}\tclosest_support: {min_distance_percent:.2f}%\tclosest_resistance: {min_resistance_distance:.2f}%"
                     logger(log_message)
                 
                         

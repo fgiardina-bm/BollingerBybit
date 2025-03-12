@@ -1167,8 +1167,8 @@ def operar8(simbolos,sr):
                         if posiciones['result']['list'][0]['side']  == 'Buy':
                             stop_loss_price = precio_de_entrada * (1 - sl_porcent / 100)
                             take_profit_price = precio_de_entrada * (1 + tp_porcent / 100)
-                            stop_loss_short,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='long', timeframe=timeframe)
-                            take_profit_short,atr_actual,multiplicador_atr,lastprice = establecer_take_profit_dinamico(df, tp_multiplicador, tipo_trade='long', timeframe=timeframe)
+                            stop_loss_short,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='long', timeframe=timeframe, multiplicador_atr=1)
+                            take_profit_short,atr_actual,multiplicador_atr,lastprice = establecer_take_profit_dinamico(df, tp_multiplicador, tipo_trade='long', timeframe=timeframe, multiplicador_atr=1)
                             logger(f"{symbol} stop_loss_short: {stop_loss_short} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             logger(f"{symbol} take_profit_short: {take_profit_short} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             result_sl = establecer_stop_loss2(symbol, stop_loss_short)
@@ -1179,8 +1179,8 @@ def operar8(simbolos,sr):
                         else:
                             stop_loss_price = precio_de_entrada * (1 + sl_porcent / 100)
                             take_profit_price = precio_de_entrada * (1 - tp_porcent / 100)
-                            stop_loss_long,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
-                            take_profit_long,atr_actual,multiplicador_atr,lastprice = establecer_take_profit_dinamico(df, tp_multiplicador, tipo_trade='short', timeframe=timeframe)
+                            stop_loss_long,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe, multiplicador_atr=1)
+                            take_profit_long,atr_actual,multiplicador_atr,lastprice = establecer_take_profit_dinamico(df, tp_multiplicador, tipo_trade='short', timeframe=timeframe, multiplicador_atr=1)
                             logger(f"{symbol} stop_loss_long: {stop_loss_long} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             logger(f"{symbol} take_profit_long: {take_profit_long} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             result_sl = establecer_stop_loss2(symbol, stop_loss_long)
@@ -1229,6 +1229,12 @@ def operar8(simbolos,sr):
 
                     ticker = client.get_tickers(category='linear', symbol=symbol)
                     precio = float(ticker['result']['list'][0]['lastPrice'])
+                    fundingRate = float(ticker['result']['list'][0]['fundingRate'])
+
+                    if abs(fundingRate) > 0.005:  # 0.5% as decimal
+                        logger(f"{symbol} Funding rate demasiado alto: {fundingRate:.4f}, saltando")
+                        time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                        continue
 
                     if bucle_cnt >= random.randint(100, 150):
                         sr = get_syr(symbol)
@@ -1260,7 +1266,7 @@ def operar8(simbolos,sr):
                                 closest_resistance = resistance
 
 
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tb:{signal_short.iloc[-1]}\ta:{signal_long.iloc[-1]}\tclosest_support: {min_distance_percent:.2f}%\tclosest_resistance: {min_resistance_distance:.2f}%"
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tb:{signal_short.iloc[-1]}\ta:{signal_long.iloc[-1]}\tff: {fundingRate:.4f}\tsupport: {min_distance_percent:.2f}%\tresistance: {min_resistance_distance:.2f}%"
                     logger(log_message)
                 
                         
@@ -1297,7 +1303,7 @@ def operar8(simbolos,sr):
                             logger(f"{symbol} ATR elevado: {atr_actual:.5f}, reduciendo posición por factor: {factor_reduccion:.2f}")
 
                         # Calcular el stop loss y verificar máxima pérdida
-                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
+                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe, multiplicador_atr=1)
                         max_perdida_permitida = saldo_usdt * (sl_percentaje_account /  100)  # Máximo 2% del saldo total
                         perdida_estimada = abs((precio - stop_loss_estimado) * (usdt / precio))
                         logger(f"{symbol} Pérdida estimada: {perdida_estimada:.2f} USDT")
@@ -1361,7 +1367,7 @@ def operar8(simbolos,sr):
 
 
                         # Calcular el stop loss y verificar máxima pérdida
-                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='long', timeframe=timeframe)
+                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='long', timeframe=timeframe, multiplicador_atr=1)
                         max_perdida_permitida = saldo_usdt * (sl_percentaje_account /  100)   # Máximo 2% del saldo total
                         perdida_estimada = abs((precio - stop_loss_estimado) * (usdt / precio))
                         logger(f"{symbol} Pérdida estimada: {perdida_estimada:.2f} USDT")

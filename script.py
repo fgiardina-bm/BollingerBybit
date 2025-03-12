@@ -1233,7 +1233,7 @@ def operar8(simbolos,sr):
 
                     if abs(fundingRate) > 0.002:  # 0.2% as decimal
                         logger(f"{symbol} Funding rate demasiado alto: {fundingRate:.4f}, saltando")
-                        time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                        time.sleep(random.randint(sleep_rand_from*2, sleep_rand_to*2))
                         continue
 
                     if bucle_cnt >= random.randint(100, 150):

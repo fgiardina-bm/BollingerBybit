@@ -1361,7 +1361,7 @@ def operar8(simbolos,sr):
 
 
                         # Calcular el stop loss y verificar máxima pérdida
-                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
+                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='long', timeframe=timeframe)
                         max_perdida_permitida = saldo_usdt * (sl_percentaje_account /  100)   # Máximo 2% del saldo total
                         perdida_estimada = abs((precio - stop_loss_estimado) * (usdt / precio))
                         logger(f"{symbol} Pérdida estimada: {perdida_estimada:.2f} USDT")

@@ -1129,6 +1129,7 @@ def operar8(simbolos,sr):
     global sl_multiplicador, tp_multiplicador
     global sl_percentaje_account
 
+    sop_res = sr
     logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
 
     bucle_cnt = 0
@@ -1237,19 +1238,19 @@ def operar8(simbolos,sr):
                         continue
 
                     if bucle_cnt >= random.randint(100, 150):
-                        sr = get_syr(symbol)
+                        sop_res = get_syr(symbol)
                         bucle_cnt = 0
 
-                    signal_long  = detectar_reversion_alcista(df, sr['soportes_total'], top_rsi, bottom_rsi)
-                    signal_short  = detectar_reversion_bajista(df, sr['resistencias_total'], top_rsi, bottom_rsi)
+                    signal_long  = detectar_reversion_alcista(df, sop_res['soportes_total'], top_rsi, bottom_rsi)
+                    signal_short  = detectar_reversion_bajista(df, sop_res['resistencias_total'], top_rsi, bottom_rsi)
 
                     rsi = talib.RSI(close_prices, timeperiod=14)
 
                     # Calcular la distancia porcentual hasta el soporte más cercano
                     closest_support = None
                     min_distance_percent = float('inf')
-                    if len(sr['soportes_total']) > 0:
-                        for support in sr['soportes_total']:
+                    if len(sop_res['soportes_total']) > 0:
+                        for support in sop_res['soportes_total']:
                             distance_percent = abs(precio - support) / precio * 100
                             if distance_percent < min_distance_percent:
                                 min_distance_percent = distance_percent
@@ -1258,8 +1259,8 @@ def operar8(simbolos,sr):
                     # Calcular la distancia porcentual hasta la resistencia más cercana
                     closest_resistance = None
                     min_resistance_distance = float('inf')
-                    if len(sr['resistencias_total']) > 0:
-                        for resistance in sr['resistencias_total']:
+                    if len(sop_res['resistencias_total']) > 0:
+                        for resistance in sop_res['resistencias_total']:
                             distance_percent = abs(precio - resistance) / precio * 100
                             if distance_percent < min_resistance_distance:
                                 min_resistance_distance = distance_percent
@@ -1411,11 +1412,11 @@ def get_syr(symbol):
     global soportes_resistencias
 
     try: 
-        logger(f"{symbol} ---- Obteniendo soportes y resistencias en 3 niveles ----")
         s,r,va,st,rt,niveles = get_soportes_resistencia(symbol)
         item = {'soportes_cerca': s, 'resistencias_cerca': r, 'valor_actual': va, 'soportes_total': st, 'resistencias_total': rt, 'niveles': niveles}
         soportes_resistencias[symbol] = item
 
+        logger(f"{symbol} ---- Obteniendo soportes y resistencias en 3 niveles ---- niveles: {item['niveles']}")
         return item
     except Exception as e:
         logger(f"Error en get_syr {symbol}: {e}")

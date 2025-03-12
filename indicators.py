@@ -621,7 +621,7 @@ def detectar_reversion_alcista(df, soportes, top_rsi, bottom_rsi):
     conditions = []
     
     if detectar_incluir_bbands == 1:
-        conditions.append(precio_actual < lower_band)
+        conditions.append(pd.Series(precio_actual < lower_band, index=df.index))
     
     if detectar_incluir_patron_velas == 1:
         conditions.append((hammer == 100) | (inverted_hammer == 100) | (engulfing == 100) | (piercing == 100))
@@ -636,7 +636,7 @@ def detectar_reversion_alcista(df, soportes, top_rsi, bottom_rsi):
         conditions.append(sma_50 < sma_200)
     
     if detectar_incluir_sr == 1:
-        conditions.append(cerca_de_soporte)
+        conditions.append(pd.Series(cerca_de_soporte, index=df.index))
     
     if detectar_incluir_adx == 1:
         conditions.append(tendencia_fuerte)
@@ -698,7 +698,7 @@ def detectar_reversion_bajista(df, resistencias, top_rsi, bottom_rsi):
     conditions = []
     
     if detectar_incluir_bbands == 1:
-        conditions.append(precio_actual > upper_band)
+        conditions.append(pd.Series(precio_actual > upper_band, index=df.index))
     
     if detectar_incluir_patron_velas == 1:
         conditions.append((shooting_star == 100) | (hanging_man == 100) | (engulfing == -100) | (dark_cloud == -100))
@@ -713,7 +713,7 @@ def detectar_reversion_bajista(df, resistencias, top_rsi, bottom_rsi):
         conditions.append(sma_50 > sma_200)
     
     if detectar_incluir_sr == 1:
-        conditions.append(cerca_de_resistencia)
+        conditions.append(pd.Series(cerca_de_resistencia, index=df.index))
     
     if detectar_incluir_adx == 1:
         conditions.append(tendencia_fuerte)

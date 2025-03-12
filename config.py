@@ -49,7 +49,7 @@ max_ops = int(os.getenv(MAX_OPS, 1))
 max_ops_short = int(os.getenv(MAX_OPS_SHORT, 2))
 max_ops_long = int(os.getenv(MAX_OPS_LONG, 2))
 strategy = int(os.getenv("STRATEGY", 1))
-sr_fib_tolerancia = float(os.getenv("SR_FIB_TOLERANCIA", 0.005))
+sr_fib_tolerancia = float(os.getenv("SR_FIB_TOLERANCIA", 0.01))
 sr_fib_velas = int(os.getenv("SR_FIB_VELAS", 50))
 
 test_mode = int(os.getenv("TEST_MODE", 0))
@@ -129,7 +129,7 @@ def reload_config():
         max_ops_long = int(os.getenv(MAX_OPS_LONG, 2))
 
         strategy = int(os.getenv("STRATEGY", 1))
-        sr_fib_tolerancia = int(os.getenv("SR_FIB_TOLERANCIA", 0.005))
+        sr_fib_tolerancia = int(os.getenv("SR_FIB_TOLERANCIA", 0.01))
         sr_fib_velas = int(os.getenv("SR_FIB_VELAS", 50))
         order_book_limit = int(os.getenv("ORDER_BOOK_LIMIT", 1000))
         order_book_delay_divisor = int(os.getenv("ORDER_BOOK_DELAY_DIVISOR", 1))

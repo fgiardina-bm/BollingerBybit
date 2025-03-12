@@ -584,7 +584,7 @@ def detectar_reversion_alcista(df, soportes, top_rsi, bottom_rsi):
     - Un array con señales: 1 (reversión alcista detectada) o 0 (sin señal)
     """
 
-    global detectar_incluir_bbands, detectar_incluir_rsi, detectar_incluir_sr, detectar_incluir_patron_velas, detectar_incluir_volume, detectar_incluir_emas, detectar_incluir_adx
+    global sr_fib_tolerancia, detectar_incluir_bbands, detectar_incluir_rsi, detectar_incluir_sr, detectar_incluir_patron_velas, detectar_incluir_volume, detectar_incluir_emas, detectar_incluir_adx
 
     # Detectar patrones de reversión alcista
     hammer = talib.CDLHAMMER(df['open'], df['high'], df['low'], df['close'])
@@ -614,7 +614,7 @@ def detectar_reversion_alcista(df, soportes, top_rsi, bottom_rsi):
 
     # Confirmar si el precio está cerca de un soporte
     precio_actual = df['close'].iloc[-1]
-    cerca_de_soporte = any(abs(precio_actual - s) / s < 0.01 for s in soportes)  # Margen del 1%
+    cerca_de_soporte = any(abs(precio_actual - s) / s < sr_fib_tolerancia for s in soportes)  # Margen del 1% o 2%
 
     # Condición para una fuerte reversión alcista
     # Create conditions based on global flags
@@ -664,7 +664,7 @@ def detectar_reversion_bajista(df, resistencias, top_rsi, bottom_rsi):
     - Un array con señales: 1 (reversión bajista detectada) o 0 (sin señal)
     """
 
-    global detectar_incluir_bbands, detectar_incluir_rsi, detectar_incluir_sr, detectar_incluir_patron_velas, detectar_incluir_volume, detectar_incluir_emas, detectar_incluir_adx
+    global sr_fib_tolerancia, detectar_incluir_bbands, detectar_incluir_rsi, detectar_incluir_sr, detectar_incluir_patron_velas, detectar_incluir_volume, detectar_incluir_emas, detectar_incluir_adx
 
     # Detectar patrones de reversión bajista
     shooting_star = talib.CDLSHOOTINGSTAR(df['open'], df['high'], df['low'], df['close'])
@@ -691,7 +691,7 @@ def detectar_reversion_bajista(df, resistencias, top_rsi, bottom_rsi):
 
     # Confirmar si el precio está cerca de una resistencia
     precio_actual = df['close'].iloc[-1]
-    cerca_de_resistencia = any(abs(precio_actual - r) / r < 0.01 for r in resistencias)  # Margen del 1%
+    cerca_de_resistencia = any(abs(precio_actual - r) / r < sr_fib_tolerancia for r in resistencias)  # Margen del 1% o 2%
 
     # Condición para una fuerte reversión bajista
     # Create conditions based on global flags

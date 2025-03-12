@@ -2,7 +2,7 @@ import pandas as pd
 from dotenv import load_dotenv
 import numpy as np
 import talib
-from config import test_mode
+from config import *
 import time
 
 def calcular_rsi_talib(closes, window=14):
@@ -507,7 +507,7 @@ def obtener_multiplicador_atr(timeframe):
     else:
         return 1.5  # Valor predeterminado para otros timeframes
 
-def establecer_stop_loss_dinamico(df, dsl, tipo_trade, timeframe, multiplicador_atr=None):
+def establecer_stop_loss_dinamico(df, slm, tipo_trade, timeframe, multiplicador_atr=None):
     """
     Establece un stop loss dinámico basado en el ATR y el timeframe.
     
@@ -531,14 +531,14 @@ def establecer_stop_loss_dinamico(df, dsl, tipo_trade, timeframe, multiplicador_
     
     if tipo_trade == 'long':
         # Colocar el stop loss debajo del mínimo de la vela, ajustado por el ATR
-        stop_loss = df['close'].iloc[-1] - ((atr_actual * multiplicador_atr) / dsl)
+        stop_loss = df['close'].iloc[-1] - ((atr_actual * multiplicador_atr) * slm)
     elif tipo_trade == 'short':
         # Colocar el stop loss encima del máximo de la vela, ajustado por el ATR
-        stop_loss = df['close'].iloc[-1] + ((atr_actual * multiplicador_atr) / dsl)
+        stop_loss = df['close'].iloc[-1] + ((atr_actual * multiplicador_atr) * slm)
     
     return stop_loss,atr_actual,multiplicador_atr,df['close'].iloc[-1]
 
-def establecer_take_profit_dinamico(df, dsl, tipo_trade, timeframe, multiplicador_atr=None):
+def establecer_take_profit_dinamico(df, tpm, tipo_trade, timeframe, multiplicador_atr=None):
     """
     Establece un take profit dinámico basado en el ATR y el timeframe.
     
@@ -562,10 +562,10 @@ def establecer_take_profit_dinamico(df, dsl, tipo_trade, timeframe, multiplicado
     
     if tipo_trade == 'long':
         # Colocar el take profit por encima del precio de cierre, ajustado por el ATR
-        take_profit = df['close'].iloc[-1] + ((atr_actual * multiplicador_atr) * dsl)
+        take_profit = df['close'].iloc[-1] + ((atr_actual * multiplicador_atr) * tpm)
     elif tipo_trade == 'short':
         # Colocar el take profit por debajo del precio de cierre, ajustado por el ATR
-        take_profit = df['close'].iloc[-1] - ((atr_actual * multiplicador_atr) * dsl)
+        take_profit = df['close'].iloc[-1] - ((atr_actual * multiplicador_atr) * tpm)
     
     return take_profit,atr_actual,multiplicador_atr,df['close'].iloc[-1]
 
@@ -583,6 +583,8 @@ def detectar_reversion_alcista(df, soportes, top_rsi, bottom_rsi):
     Retorna:
     - Un array con señales: 1 (reversión alcista detectada) o 0 (sin señal)
     """
+
+    global detectar_incluir_bbands, detectar_incluir_rsi, detectar_incluir_sr, detectar_incluir_patron_velas, detectar_incluir_volume, detectar_incluir_emas, detectar_incluir_adx
 
     # Detectar patrones de reversión alcista
     hammer = talib.CDLHAMMER(df['open'], df['high'], df['low'], df['close'])
@@ -615,15 +617,36 @@ def detectar_reversion_alcista(df, soportes, top_rsi, bottom_rsi):
     cerca_de_soporte = any(abs(precio_actual - s) / s < 0.01 for s in soportes)  # Margen del 1%
 
     # Condición para una fuerte reversión alcista
-    reversion_alcista = (
-        (precio_actual < lower_band) &
-        # ((hammer == 100) | (inverted_hammer == 100) | (engulfing == 100) | (piercing == 100)) &
-        (rsi < bottom_rsi) &  # Confirmar sobreventa
-        # (volumen_alto) &
-        # (sma_50 < sma_200) &  # Confirmar tendencia bajista previa
-        cerca_de_soporte # Solo operar en soportes clave
-        # tendencia_fuerte  # Solo operar si hay una tendencia fuerte
-    ).astype(int)
+    # Create conditions based on global flags
+    conditions = []
+    
+    if detectar_incluir_bbands == 1:
+        conditions.append(precio_actual < lower_band)
+    
+    if detectar_incluir_patron_velas == 1:
+        conditions.append((hammer == 100) | (inverted_hammer == 100) | (engulfing == 100) | (piercing == 100))
+    
+    if detectar_incluir_rsi == 1:
+        conditions.append(rsi < bottom_rsi)
+    
+    if detectar_incluir_volume == 1:
+        conditions.append(volumen_alto)
+    
+    if detectar_incluir_emas == 1:
+        conditions.append(sma_50 < sma_200)
+    
+    if detectar_incluir_sr == 1:
+        conditions.append(cerca_de_soporte)
+    
+    if detectar_incluir_adx == 1:
+        conditions.append(tendencia_fuerte)
+    
+    # If no conditions are active, return array of zeros
+    if not conditions:
+        return pd.Series(0, index=df.index)
+    
+    # Combine all active conditions with logical AND
+    reversion_alcista = pd.concat(conditions, axis=1).all(axis=1).astype(int)
 
     return reversion_alcista
 
@@ -640,6 +663,8 @@ def detectar_reversion_bajista(df, resistencias, top_rsi, bottom_rsi):
     Retorna:
     - Un array con señales: 1 (reversión bajista detectada) o 0 (sin señal)
     """
+
+    global detectar_incluir_bbands, detectar_incluir_rsi, detectar_incluir_sr, detectar_incluir_patron_velas, detectar_incluir_volume, detectar_incluir_emas, detectar_incluir_adx
 
     # Detectar patrones de reversión bajista
     shooting_star = talib.CDLSHOOTINGSTAR(df['open'], df['high'], df['low'], df['close'])
@@ -669,15 +694,36 @@ def detectar_reversion_bajista(df, resistencias, top_rsi, bottom_rsi):
     cerca_de_resistencia = any(abs(precio_actual - r) / r < 0.01 for r in resistencias)  # Margen del 1%
 
     # Condición para una fuerte reversión bajista
-    reversion_bajista = (
-        (precio_actual > upper_band) &
-        # ((shooting_star == 100) | (hanging_man == 100) | (engulfing == -100) | (dark_cloud == -100)) &
-        (rsi > top_rsi) &  # Confirmar sobrecompra
-        # (volumen_alto) &
-        # (sma_50 > sma_200) &  # Confirmar tendencia alcista previa
-        cerca_de_resistencia # Solo operar en resistencias clave
-        # tendencia_fuerte  # Solo operar si hay una tendencia fuerte
-    ).astype(int)
+    # Create conditions based on global flags
+    conditions = []
+    
+    if detectar_incluir_bbands == 1:
+        conditions.append(precio_actual > upper_band)
+    
+    if detectar_incluir_patron_velas == 1:
+        conditions.append((shooting_star == 100) | (hanging_man == 100) | (engulfing == -100) | (dark_cloud == -100))
+    
+    if detectar_incluir_rsi == 1:
+        conditions.append(rsi > top_rsi)
+    
+    if detectar_incluir_volume == 1:
+        conditions.append(volumen_alto)
+    
+    if detectar_incluir_emas == 1:
+        conditions.append(sma_50 > sma_200)
+    
+    if detectar_incluir_sr == 1:
+        conditions.append(cerca_de_resistencia)
+    
+    if detectar_incluir_adx == 1:
+        conditions.append(tendencia_fuerte)
+    
+    # If no conditions are active, return array of zeros
+    if not conditions:
+        return pd.Series(0, index=df.index)
+    
+    # Combine all active conditions with logical AND
+    reversion_bajista = pd.concat(conditions, axis=1).all(axis=1).astype(int)
 
     return reversion_bajista
 

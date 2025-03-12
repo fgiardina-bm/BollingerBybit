@@ -1126,7 +1126,8 @@ def operar8(simbolos,sr):
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions_long, opened_positions_short
     global max_ops_long, max_ops_short, sr_fib_tolerancia, sr_fib_velas,account_usdt_limit, order_book_limit, order_book_delay_divisor
-    global divisor_sl,sl_percentaje_account
+    global sl_multiplicador, tp_multiplicador
+    global sl_percentaje_account
 
     logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
 
@@ -1166,8 +1167,8 @@ def operar8(simbolos,sr):
                         if posiciones['result']['list'][0]['side']  == 'Buy':
                             stop_loss_price = precio_de_entrada * (1 - sl_porcent / 100)
                             take_profit_price = precio_de_entrada * (1 + tp_porcent / 100)
-                            stop_loss_short,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, divisor_sl, tipo_trade='long', timeframe=timeframe)
-                            take_profit_short,atr_actual,multiplicador_atr,lastprice = establecer_take_profit_dinamico(df, divisor_sl, tipo_trade='long', timeframe=timeframe)
+                            stop_loss_short,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='long', timeframe=timeframe)
+                            take_profit_short,atr_actual,multiplicador_atr,lastprice = establecer_take_profit_dinamico(df, tp_multiplicador, tipo_trade='long', timeframe=timeframe)
                             logger(f"{symbol} stop_loss_short: {stop_loss_short} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             logger(f"{symbol} take_profit_short: {take_profit_short} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             result_sl = establecer_stop_loss2(symbol, stop_loss_short)
@@ -1178,8 +1179,8 @@ def operar8(simbolos,sr):
                         else:
                             stop_loss_price = precio_de_entrada * (1 + sl_porcent / 100)
                             take_profit_price = precio_de_entrada * (1 - tp_porcent / 100)
-                            stop_loss_long,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, divisor_sl, tipo_trade='short', timeframe=timeframe)
-                            take_profit_long,atr_actual,multiplicador_atr,lastprice = establecer_take_profit_dinamico(df, divisor_sl, tipo_trade='short', timeframe=timeframe)
+                            stop_loss_long,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
+                            take_profit_long,atr_actual,multiplicador_atr,lastprice = establecer_take_profit_dinamico(df, tp_multiplicador, tipo_trade='short', timeframe=timeframe)
                             logger(f"{symbol} stop_loss_long: {stop_loss_long} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             logger(f"{symbol} take_profit_long: {take_profit_long} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             result_sl = establecer_stop_loss2(symbol, stop_loss_long)
@@ -1286,7 +1287,7 @@ def operar8(simbolos,sr):
 
                         # Ajustar el importe de USDT según el ATR
                         # Si el ATR es muy grande, reducimos la exposición para limitar el riesgo
-                        max_atr_riesgo = precio * 0.03  # Considera un 1% como ATR de referencia
+                        max_atr_riesgo = precio * 0.03  # Considera un 3% como ATR de referencia
                         if atr_actual > max_atr_riesgo:
                             # Reducir el importe proporcionalmente al exceso de ATR
                             factor_reduccion = max_atr_riesgo / atr_actual
@@ -1294,7 +1295,7 @@ def operar8(simbolos,sr):
                             logger(f"{symbol} ATR elevado: {atr_actual:.5f}, reduciendo posición por factor: {factor_reduccion:.2f}")
 
                         # Calcular el stop loss y verificar máxima pérdida
-                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, divisor_sl, tipo_trade='short', timeframe=timeframe)
+                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
                         max_perdida_permitida = saldo_usdt * (sl_percentaje_account /  100)  # Máximo 2% del saldo total
                         perdida_estimada = abs((precio - stop_loss_estimado) * (usdt / precio))
 
@@ -1351,7 +1352,7 @@ def operar8(simbolos,sr):
                             logger(f"{symbol} ATR elevado: {atr_actual:.5f}, reduciendo posición por factor: {factor_reduccion:.2f}")
 
                         # Calcular el stop loss y verificar máxima pérdida
-                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, divisor_sl, tipo_trade='short', timeframe=timeframe)
+                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
                         max_perdida_permitida = saldo_usdt * (sl_percentaje_account /  100)   # Máximo 2% del saldo total
                         perdida_estimada = abs((precio - stop_loss_estimado) * (usdt / precio))
 

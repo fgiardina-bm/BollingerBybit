@@ -56,8 +56,19 @@ test_mode = int(os.getenv("TEST_MODE", 0))
 order_book_limit = int(os.getenv("ORDER_BOOK_LIMIT", 1000))
 order_book_delay_divisor = int(os.getenv("ORDER_BOOK_DELAY_DIVISOR", 1))
 black_list_symbols = os.getenv("BLACK_LIST_SYMBOLS", "BNXUSDT").split(",")
-divisor_sl = int(os.getenv("DIVISOR_SL", 2))
+sl_multiplicador = float(os.getenv("SL_MULTIPLICADOR", 0.5))
+tp_multiplicador = float(os.getenv("TP_MULTIPLICADOR", 1.5))
 sl_percentaje_account = float(os.getenv("SL_PERCENTAJE_ACCOUNT", 2.0))
+
+detectar_incluir_bbands = int(os.getenv("DETECTAR_INCLUIR_BBANDS", 1))
+detectar_incluir_rsi = int(os.getenv("DETECTAR_INCLUIR_RSI", 1))
+detectar_incluir_sr = int(os.getenv("DETECTAR_INCLUIR_SR", 1))
+detectar_incluir_patron_velas = int(os.getenv("DETECTAR_INCLUIR_PATRON_VELAS", 1))
+detectar_incluir_volume = int(os.getenv("DETECTAR_INCLUIR_VOLUME", 1))
+detectar_incluir_emas = int(os.getenv("DETECTAR_INCLUIR_EMAS", 1))
+detectar_incluir_adx = int(os.getenv("DETECTAR_INCLUIR_ADX", 1))    
+
+
 
 config_lock = threading.Lock()
 
@@ -75,8 +86,9 @@ def reload_config():
     global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
     global opened_positions, opened_positions_short, opened_positions_long
     global max_ops_short, max_ops_long, strategy, sr_fib_tolerancia, test_mode, sr_fib_velas, account_usdt_limit
-    global soportes_resistencias, order_book_limit, order_book_delay_divisor, black_list_symbols, divisor_sl
+    global soportes_resistencias, order_book_limit, order_book_delay_divisor, black_list_symbols, sl_multiplicador, tp_multiplicador
     global sl_percentaje_account
+    global detectar_incluir_bbands, detectar_incluir_rsi, detectar_incluir_sr, detectar_incluir_patron_velas, detectar_incluir_volume, detectar_incluir_emas, detectar_incluir_adx
 
     config_path = ".env"
 
@@ -122,8 +134,20 @@ def reload_config():
         order_book_limit = int(os.getenv("ORDER_BOOK_LIMIT", 1000))
         order_book_delay_divisor = int(os.getenv("ORDER_BOOK_DELAY_DIVISOR", 1))
         black_list_symbols = os.getenv("BLACK_LIST_SYMBOLS", "").split(",")
-        divisor_sl = int(os.getenv("DIVISOR_SL", 2))
+        sl_multiplicador = float(os.getenv("SL_MULTIPLICADOR", 2))
+        tp_multiplicador = float(os.getenv("TP_MULTIPLICADOR", 1.5))
         sl_percentaje_account = float(os.getenv("SL_PERCENTAJE_ACCOUNT", 2.0))
+
+        detectar_incluir_bbands = int(os.getenv("DETECTAR_INCLUIR_BBANDS", 1))
+        detectar_incluir_rsi = int(os.getenv("DETECTAR_INCLUIR_RSI", 1))
+        detectar_incluir_sr = int(os.getenv("DETECTAR_INCLUIR_SR", 1))
+        detectar_incluir_patron_velas = int(os.getenv("DETECTAR_INCLUIR_PATRON_VELAS", 1))
+        detectar_incluir_volume = int(os.getenv("DETECTAR_INCLUIR_VOLUME", 1))
+        detectar_incluir_emas = int(os.getenv("DETECTAR_INCLUIR_EMAS", 1))
+        detectar_incluir_adx = int(os.getenv("DETECTAR_INCLUIR_ADX", 1))   
+
+
+
         soportes_resistencias = {}
 
     except ValueError as e:

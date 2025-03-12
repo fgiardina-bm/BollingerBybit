@@ -1327,7 +1327,10 @@ def operar8(simbolos,sr):
                         if qty.is_integer():
                             qty = int(qty)
                         logger(f"{symbol} Cantidad de monedas a vender: " + str(qty))
-                        crear_orden(symbol, "Sell", "Market", qty)
+
+                        stop_loss_param,_,_,_ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe, multiplicador_atr=1)
+                        take_profit_param,_,_,_ = establecer_take_profit_dinamico(df, tp_multiplicador, tipo_trade='short', timeframe=timeframe, multiplicador_atr=1)
+                        crear_orden_con_stoploss_takeprofit(symbol, "Sell", "Market", qty,stop_loss_param,take_profit_param)
                         if monitoring == 1:
                             # Iniciar el monitoreo de la operación
                             precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
@@ -1392,7 +1395,10 @@ def operar8(simbolos,sr):
                             qty = int(qty)
 
                         logger(f"{symbol} Cantidad de monedas a comprar: " + str(qty))
-                        crear_orden(symbol, "Buy", "Market", qty)
+                        stop_loss_param,_,_,_ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='long', timeframe=timeframe, multiplicador_atr=1)
+                        take_profit_param,_,_,_ = establecer_take_profit_dinamico(df, tp_multiplicador, tipo_trade='long', timeframe=timeframe, multiplicador_atr=1)
+                        crear_orden_con_stoploss_takeprofit(symbol, "Buy", "Market", qty,stop_loss_param,take_profit_param)
+
                         if monitoring == 1:
                             # Iniciar el monitoreo de la operación
                             precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])

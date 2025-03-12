@@ -197,7 +197,7 @@ def crear_orden(symbol, side, order_type, qty):
                 qty=qty,
                 timeInForce="GoodTillCancel"
             )
-            logger("{test_mode} Orden creada con exito:" + str(response))
+            logger(f"{test_mode} Orden creada con exito: {str(response)}")
         else:
             logger(f"Test mode activado. No se creará la orden en symbol: {symbol}, side: {side}, order_type: {order_type}, qty: {qty}")
 
@@ -206,6 +206,47 @@ def crear_orden(symbol, side, order_type, qty):
 
     except Exception as e:
         logger(f"{test_mode} Error al crear la orden: {e}")
+
+def crear_orden_con_stoploss_takeprofit(symbol, side, order_type, qty, sl, tp):
+    """
+    Crear una orden con stop-loss y take-profit configurados directamente.
+    
+    Args:
+        symbol (str): Símbolo del par de trading
+        side (str): 'Buy' o 'Sell'
+        order_type (str): Tipo de orden ('Market', 'Limit', etc.)
+        qty (float): Cantidad a operar
+        sl (float): Precio del stop-loss
+        tp (float): Precio del take-profit
+    
+    Returns:
+        dict/None: Respuesta de la API o None si está en modo de prueba
+    """
+    global test_mode
+    try:
+        sl_price = qty_step(sl, symbol)
+        tp_price = qty_step(tp, symbol)
+        
+        if test_mode == 0:
+            response = client.place_order(
+                category="linear",
+                symbol=symbol,
+                side=side,
+                orderType=order_type,
+                qty=qty,
+                timeInForce="GoodTillCancel",
+                stopLoss=sl_price,
+                takeProfit=tp_price
+            )
+            logger(f"{test_mode} Orden creada con SL/TP con éxito: {str(response)}")
+            return response
+        else:
+            logger(f"Test mode activado. No se creará la orden con SL/TP en symbol: {symbol}, side: {side}, qty: {qty}, SL: {sl_price}, TP: {tp_price}")
+            return None
+
+    except Exception as e:
+        logger(f"{test_mode} Error al crear la orden con SL/TP: {e}")
+        return None
 
 def establecer_st_tp(symbol):
     global test_mode

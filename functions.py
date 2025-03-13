@@ -701,7 +701,7 @@ def monitorear_operaciones_abiertas_0(symbol, precio_entrada, side, qty):
 
 
 
-def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):
+def monitorear_operaciones_abiertas(symbol, precio_entrada, side, sl_callback=1):
     global test_mode
 
     pe = precio_entrada
@@ -713,13 +713,13 @@ def monitorear_operaciones_abiertas(symbol, precio_entrada, side, qty):
                 logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} - Precio actual: {precio_actual} - Precio de entrada: {precio_entrada}")
                 if side == 'Buy':
                     if precio_actual > (pe * 1.005):
-                        nuevo_stop_loss = precio_actual * (1 - sl_callback_percentage / 100)
+                        nuevo_stop_loss = precio_actual * (1 - sl_callback / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
                         pe = precio_actual
                         logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Buy")
                 else:
                     if precio_actual < (pe * 0.995):
-                        nuevo_stop_loss = precio_actual * (1 + sl_callback_percentage / 100)
+                        nuevo_stop_loss = precio_actual * (1 + sl_callback / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
                         pe = precio_actual
                         logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Sell")

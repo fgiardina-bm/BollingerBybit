@@ -1304,7 +1304,7 @@ def operar8(simbolos,sr):
                             logger(f"{symbol} ATR elevado: {atr_actual:.5f}, reduciendo posición por factor: {factor_reduccion:.2f}")
 
                         # Calcular el stop loss y verificar máxima pérdida
-                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe, multiplicador_atr=1)
+                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
                         max_perdida_permitida = saldo_usdt * (sl_percentaje_account /  100)  # Máximo 2% del saldo total
                         perdida_estimada = abs((precio - stop_loss_estimado) * (usdt / precio))
                         logger(f"{symbol} Pérdida estimada: {perdida_estimada:.2f} USDT")
@@ -1328,13 +1328,16 @@ def operar8(simbolos,sr):
                             qty = int(qty)
                         logger(f"{symbol} Cantidad de monedas a vender: " + str(qty))
 
-                        stop_loss_param,_,_,_ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe, multiplicador_atr=1)
-                        take_profit_param,_,_,_ = establecer_take_profit_dinamico(df, tp_multiplicador, tipo_trade='short', timeframe=timeframe, multiplicador_atr=1)
+                        stop_loss_param,_,_,_ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
+                        take_profit_param,_,_,_ = establecer_take_profit_dinamico(df, tp_multiplicador, tipo_trade='short', timeframe=timeframe)
                         crear_orden_con_stoploss_takeprofit(symbol, "Sell", "Market", qty,stop_loss_param,take_profit_param)
                         if monitoring == 1:
                             # Iniciar el monitoreo de la operación
                             precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
-                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Sell", qty))
+                            # Calcular el % absoluto entre stop loss y precio de entrada
+                            sl_porcentaje = abs((stop_loss_param - precio_entrada) / precio_entrada * 100)
+                            logger(f"{symbol} Porcentaje de SL: {sl_porcentaje:.2f}%")
+                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Sell", sl_porcentaje))
                             hilo_monitoreo.start()
 
                     if signal_long.iloc[-1] == 1:
@@ -1371,7 +1374,7 @@ def operar8(simbolos,sr):
 
 
                         # Calcular el stop loss y verificar máxima pérdida
-                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='long', timeframe=timeframe, multiplicador_atr=1)
+                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='long', timeframe=timeframe)
                         max_perdida_permitida = saldo_usdt * (sl_percentaje_account /  100)   # Máximo 2% del saldo total
                         perdida_estimada = abs((precio - stop_loss_estimado) * (usdt / precio))
                         logger(f"{symbol} Pérdida estimada: {perdida_estimada:.2f} USDT")
@@ -1395,14 +1398,17 @@ def operar8(simbolos,sr):
                             qty = int(qty)
 
                         logger(f"{symbol} Cantidad de monedas a comprar: " + str(qty))
-                        stop_loss_param,_,_,_ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='long', timeframe=timeframe, multiplicador_atr=1)
-                        take_profit_param,_,_,_ = establecer_take_profit_dinamico(df, tp_multiplicador, tipo_trade='long', timeframe=timeframe, multiplicador_atr=1)
+                        stop_loss_param,_,_,_ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='long', timeframe=timeframe)
+                        take_profit_param,_,_,_ = establecer_take_profit_dinamico(df, tp_multiplicador, tipo_trade='long', timeframe=timeframe)
                         crear_orden_con_stoploss_takeprofit(symbol, "Buy", "Market", qty,stop_loss_param,take_profit_param)
 
                         if monitoring == 1:
                             # Iniciar el monitoreo de la operación
                             precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
-                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Buy", qty))
+                            # Calcular el % absoluto entre stop loss y precio de entrada
+                            sl_porcentaje = abs((stop_loss_param - precio_entrada) / precio_entrada * 100)
+                            logger(f"{symbol} Porcentaje de SL: {sl_porcentaje:.2f}%")
+                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Buy", sl_porcentaje))
                             hilo_monitoreo.start()
 
             except Exception as e:

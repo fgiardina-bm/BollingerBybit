@@ -1170,31 +1170,35 @@ def operar8(simbolos,sr):
                             logger(f"{symbol} stop_loss_short: {stop_loss_short} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             result_sl = establecer_stop_loss2(symbol, stop_loss_short)
 
-                            if monitoring == 1:
-                                # Iniciar el monitoreo de la operación
-                                # Calcular el % absoluto entre stop loss y precio de entrada
-                                sl_porcentaje = abs((stop_loss_short - precio_de_entrada) / precio_de_entrada * 100)
-                                logger(f"{symbol} Porcentaje de SL: {sl_porcentaje:.2f}%")
-                                hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Buy", sl_porcentaje))
-                                hilo_monitoreo.start()
+
 
                             if result_sl:
-                                logger(f"{symbol} Stop loss y take profit activados")
+                                logger(f"{symbol} Stop loss activado")
+
+                                if monitoring == 1:
+                                    # Iniciar el monitoreo de la operación
+                                    # Calcular el % absoluto entre stop loss y precio de entrada
+                                    sl_porcentaje = abs((stop_loss_short - precio_de_entrada) / precio_de_entrada * 100)
+                                    logger(f"{symbol} Porcentaje de SL: {sl_porcentaje:.2f}%")
+                                    hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_de_entrada, "Buy", sl_porcentaje))
+                                    hilo_monitoreo.start()
                             
                         else:
                             stop_loss_long,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
                             logger(f"{symbol} stop_loss_long: {stop_loss_long} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             result_sl = establecer_stop_loss2(symbol, stop_loss_long)
-                            if monitoring == 1:
-                                # Iniciar el monitoreo de la operación
-                                # Calcular el % absoluto entre stop loss y precio de entrada
-                                sl_porcentaje = abs((stop_loss_long - precio_de_entrada) / precio_de_entrada * 100)
-                                logger(f"{symbol} Porcentaje de SL: {sl_porcentaje:.2f}%")
-                                hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Sell", sl_porcentaje))
-                                hilo_monitoreo.start()
+
 
                             if result_sl:
-                                logger(f"{symbol} Stop loss y take profit activados")
+                                logger(f"{symbol} Stop loss activado")
+
+                                if monitoring == 1:
+                                    # Iniciar el monitoreo de la operación
+                                    # Calcular el % absoluto entre stop loss y precio de entrada
+                                    sl_porcentaje = abs((stop_loss_long - precio_de_entrada) / precio_de_entrada * 100)
+                                    logger(f"{symbol} Porcentaje de SL: {sl_porcentaje:.2f}%")
+                                    hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_de_entrada, "Sell", sl_porcentaje))
+                                    hilo_monitoreo.start()
                                 
                     else:
                         logger(f"Hay una posicion abierta en {symbol} espero 60 segundos")
@@ -1239,7 +1243,7 @@ def operar8(simbolos,sr):
                     precio = float(ticker['result']['list'][0]['lastPrice'])
                     fundingRate = float(ticker['result']['list'][0]['fundingRate'])
 
-                    if abs(fundingRate) > 0.002:  # 0.2% as decimal
+                    if abs(fundingRate) > 0.0015:  # 0.1% as decimal
                         logger(f"{symbol} Funding rate demasiado alto: {(fundingRate*100):.4f}, saltando")
                         time.sleep(random.randint(sleep_rand_from*2, sleep_rand_to*2))
                         continue

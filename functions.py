@@ -730,7 +730,7 @@ def monitorear_operaciones_abiertas_0(symbol, precio_entrada, side, qty):
 
 
 def monitorear_operaciones_abiertas(symbol, precio_entrada, side, sl_callback=1):
-    global test_mode
+    global test_mode,sl_callback_progresive
 
     pe = precio_entrada
     counter_sl = 1.0
@@ -747,7 +747,7 @@ def monitorear_operaciones_abiertas(symbol, precio_entrada, side, sl_callback=1)
                         nuevo_stop_loss = precio_actual * (1 - sl_progresive / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
                         pe = precio_actual
-                        counter_sl += 0.7
+                        counter_sl += sl_callback_progresive
                         logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Buy")
                 else:
                     if precio_actual < (pe * 0.99):
@@ -755,7 +755,7 @@ def monitorear_operaciones_abiertas(symbol, precio_entrada, side, sl_callback=1)
                         nuevo_stop_loss = precio_actual * (1 + sl_progresive / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
                         pe = precio_actual
-                        counter_sl += 0.7
+                        counter_sl += sl_callback_progresive
                         logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Sell")
             else:
                 logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} No hay posiciones abiertas en {symbol}. Saliendo del monitoreo.")

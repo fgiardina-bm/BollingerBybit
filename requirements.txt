@@ -7,3 +7,9 @@ binance-futures
 ccxt
 python-binance
 matplotlib
+# scikit-learn
+# imbalanced-learn
+# xgboost
+# binance-connector
+# websockets
+# requests

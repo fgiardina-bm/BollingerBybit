@@ -1170,8 +1170,6 @@ def operar8(simbolos,sr):
                             logger(f"{symbol} stop_loss_short: {stop_loss_short} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             result_sl = establecer_stop_loss2(symbol, stop_loss_short)
 
-
-
                             if result_sl:
                                 logger(f"{symbol} Stop loss activado")
 
@@ -1187,7 +1185,6 @@ def operar8(simbolos,sr):
                             stop_loss_long,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
                             logger(f"{symbol} stop_loss_long: {stop_loss_long} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
                             result_sl = establecer_stop_loss2(symbol, stop_loss_long)
-
 
                             if result_sl:
                                 logger(f"{symbol} Stop loss activado")

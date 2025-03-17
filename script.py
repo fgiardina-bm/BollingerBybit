@@ -1210,6 +1210,10 @@ def operar8(simbolos,sr):
                         time.sleep(60)
                         continue
 
+                    if bucle_cnt < 2:
+                        logger(f"no OPERAR aun | {bucle_cnt}.")
+                        time.sleep(20)
+                        continue
 
                     # Obtener datos historicos
                     datam = obtener_datos_historicos(symbol, timeframe)

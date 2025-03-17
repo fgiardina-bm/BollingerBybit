@@ -1505,8 +1505,8 @@ def operar9(simbolos):
                                     hilo_monitoreo.start()
                                 
                     else:
-                        logger(f"Hay una posicion abierta en {symbol} espero 60 segundos")
-                        time.sleep(60)
+                        logger(f"Hay una posicion abierta en {symbol} espero 300 segundos")
+                        time.sleep(300)
                 else:
 
                     if symbol in opened_positions:
@@ -1515,6 +1515,11 @@ def operar9(simbolos):
                     if len(opened_positions) >= max_ops:
                         logger(f"Se alcanzó el límite de posiciones abiertas | {max_ops}.")
                         time.sleep(60)
+                        continue
+
+                    if bucle_cnt < 2:
+                        logger(f"no OPERAR aun | {bucle_cnt}.")
+                        time.sleep(20)
                         continue
 
 
@@ -1545,9 +1550,10 @@ def operar9(simbolos):
                         time.sleep(random.randint(sleep_rand_from*2, sleep_rand_to*2))
                         continue
 
-
+    
                     ema5 = talib.EMA(close_prices, timeperiod=5)[-1]
                     ema10 = talib.EMA(close_prices, timeperiod=10)[-1]
+                    
                     # Check for EMA crossover
                     previous_ema5 = talib.EMA(close_prices[:-1], timeperiod=5)[-1]
                     previous_ema10 = talib.EMA(close_prices[:-1], timeperiod=10)[-1]
@@ -1567,7 +1573,7 @@ def operar9(simbolos):
                     signal_long = signal_long & (rsi < bottom_rsi)
                     signal_short = signal_short & (rsi > top_rsi)
 
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tema5: {ema5:.5f}\tema10:{ema10:.5f}\tff: {(fundingRate*100):.4f}"
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\tema5: {ema5:.3f}\tema10:{ema10:.3f}\tprevious_ema5: {(previous_ema5):.3f}\tprevious_ema10: {(previous_ema10):.3f}"
                     logger(log_message)
                 
                         
@@ -1594,15 +1600,7 @@ def operar9(simbolos):
                         logger(f"{symbol} ATR actual: {atr_actual:.5f}")
 
                         # Ajustar el importe de USDT según el ATR
-                        # Si el ATR es muy grande, reducimos la exposición para limitar el riesgo
-                        max_atr_riesgo = precio * 0.03  # Considera un 3% como ATR de referencia
-                        logger(f"{symbol} ATR máximo permitido: {max_atr_riesgo:.5f}")
-                        if atr_actual > max_atr_riesgo:
-                            # Reducir el importe proporcionalmente al exceso de ATR
-                            factor_reduccion = max_atr_riesgo / atr_actual
-                            usdt = usdt * factor_reduccion
-                            logger(f"{symbol} ATR elevado: {atr_actual:.5f}, reduciendo posición por factor: {factor_reduccion:.2f}")
-
+  
                         # Calcular el stop loss y verificar máxima pérdida
                         stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
                         max_perdida_permitida = saldo_usdt * (sl_percentaje_account /  100)  # Máximo 2% del saldo total
@@ -1656,15 +1654,6 @@ def operar9(simbolos):
                         logger(f"{symbol} ATR actual: {atr_actual:.5f}")
 
                         # Ajustar el importe de USDT según el ATR
-                        # Si el ATR es muy grande, reducimos la exposición para limitar el riesgo
-                        max_atr_riesgo = precio * 0.03  # Considera un 1% como ATR de referencia
-                        logger(f"{symbol} ATR máximo permitido: {max_atr_riesgo:.5f}")
-                        if atr_actual > max_atr_riesgo:
-                            # Reducir el importe proporcionalmente al exceso de ATR
-                            factor_reduccion = max_atr_riesgo / atr_actual
-                            usdt = usdt * factor_reduccion
-                            logger(f"{symbol} ATR elevado: {atr_actual:.5f}, reduciendo posición por factor: {factor_reduccion:.2f}")
-
 
                         # Calcular el stop loss y verificar máxima pérdida
                         stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='long', timeframe=timeframe)

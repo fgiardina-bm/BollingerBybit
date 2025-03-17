@@ -695,6 +695,67 @@ def analizar_posible_orden_patron_velas(symbol, side, order_type, qty, bollinger
         time.sleep(random.randint(int(sleep_rand_from/4), int(sleep_rand_to/4)))
 
 
+def analizar_posible_orden_ema(symbol, side, order_type, qty, stop_loss_param, take_profit_param):
+    global test_mode
+
+    
+    while True:
+        try:
+            if not verificar_posicion_abierta(symbol):
+                logger(f"analizar_posible_orden en {symbol} - No hay posiciones abiertas en {symbol}")
+ 
+                datam = obtener_datos_historicos(symbol, timeframe)
+                
+                open_prices = np.array(datam[1])
+                high_prices = np.array(datam[2])
+                low_prices = np.array(datam[3])
+                close_prices = np.array(datam[4])
+                volumes = np.array(datam[5])
+
+                df = pd.DataFrame({
+                    'open': open_prices,
+                    'high': high_prices,
+                    'low': low_prices,
+                    'close': close_prices,
+                    'volume': volumes
+                })
+
+                ema20 = talib.EMA(close_prices, timeperiod=20)[-1]
+                # Obtener el precio actual del último cierre
+                precio_actual = close_prices[-1]
+                logger(f"Analizando {symbol} - Precio actual: {precio_actual} - EMA20: {ema20}")
+
+                # También podríamos obtener un precio en tiempo real directamente de la API
+                try:
+                    precio_tiempo_real = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
+                    logger(f"Precio en tiempo real de {symbol}: {precio_tiempo_real}")
+                except Exception as e:
+                    logger(f"Error al obtener precio en tiempo real: {e}")
+                    precio_tiempo_real = precio_actual
+
+                rsi = calcular_rsi_talib(df['close'])
+
+
+                if side == "Sell": # Precio por debajo de la ema de 20
+                    if precio_tiempo_real < ema20 and rsi < 70:
+                        crear_orden_con_stoploss_takeprofit(symbol, "Sell", order_type, qty,stop_loss_param,take_profit_param)
+                        break
+                   
+                else:
+                    if precio_tiempo_real > ema20 and rsi > 30:
+                        crear_orden_con_stoploss_takeprofit(symbol, "Buy", order_type, qty,stop_loss_param,take_profit_param)
+                        break
+            else:
+                logger(f"analizar_posible_orden en {symbol} - Ya hay una posición abierta en {symbol}")
+                break
+        except Exception as e:
+            logger(f"analizar_posible_orden en {symbol} - Error al analizar posible orden en {symbol}: {e}")
+            break
+
+        time.sleep(random.randint(int(sleep_rand_from/4), int(sleep_rand_to/4)))
+
+
+
 def monitorear_operaciones_abiertas_0(symbol, precio_entrada, side, qty):
     global test_mode
 

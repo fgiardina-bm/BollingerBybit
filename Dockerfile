@@ -38,6 +38,7 @@ COPY ./script.py ./
 COPY ./functions.py ./
 COPY ./config.py ./
 COPY ./indicators.py ./
+COPY ./sr.py ./
 
 # Instalar dependencias
 RUN pip install --no-cache-dir -r requirements.txt

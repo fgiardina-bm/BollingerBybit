@@ -15,6 +15,7 @@ import json
 from functions import *
 from indicators import *
 from config import reload_config
+from sr import *
 
 logger(f"Bot iniciado {timeframe}")
 
@@ -1697,6 +1698,318 @@ def operar9(simbolos):
          time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
 
 
+def operar10(simbolos,sr): # nuevo calculo soporte y resistencia
+    global opened_positions, opened_positions_short, opened_positions_long
+    global saldo_usdt_inicial
+    global api_key, api_secret, timeframe, tp_porcent, sl_porcent, cnt_symbols
+    global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
+    global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
+    global opened_positions_long, opened_positions_short
+    global max_ops_long, max_ops_short, sr_fib_tolerancia, sr_fib_velas,account_usdt_limit, order_book_limit, order_book_delay_divisor
+    global sl_multiplicador, tp_multiplicador
+    global sl_percentaje_account
+
+    sop_res = sr
+    logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
+
+    bucle_cnt = 0
+    while True:
+         bucle_cnt += 1 
+         for symbol in simbolos:
+            try:
+                posiciones = get_opened_positions(symbol=symbol)
+                if float(posiciones['result']['list'][0]['size']) != 0:
+
+                    if symbol not in opened_positions:
+                        opened_positions.append(symbol)
+
+                    logger("Hay una posicion abierta en " + symbol)
+                    if not verificar_posicion_abierta_solo_stop_loss(symbol):
+                        logger(f"{symbol}: verifico posicion abierta con detalles: {verificar_posicion_abierta_details(symbol)}")
+
+                        precio_de_entrada = float(posiciones['result']['list'][0]['avgPrice'])
+
+                        datam = obtener_datos_historicos(symbol, timeframe)
+                    
+                        open_prices = np.array(datam[1])
+                        high_prices = np.array(datam[2])
+                        low_prices = np.array(datam[3])
+                        close_prices = np.array(datam[4])
+                        volumes = np.array(datam[5])
+
+                        df = pd.DataFrame({
+                            'open': open_prices,
+                            'high': high_prices,
+                            'low': low_prices,
+                            'close': close_prices,
+                            'volume': volumes
+                        })
+                        
+                        if posiciones['result']['list'][0]['side']  == 'Buy':
+                            stop_loss_short,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='long', timeframe=timeframe)
+                            logger(f"{symbol} stop_loss_short: {stop_loss_short} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
+                            result_sl = establecer_stop_loss2(symbol, stop_loss_short)
+
+                            if result_sl:
+                                logger(f"{symbol} Stop loss activado")
+
+                                if monitoring == 1:
+                                    # Iniciar el monitoreo de la operación
+                                    # Calcular el % absoluto entre stop loss y precio de entrada
+                                    sl_porcentaje = abs((stop_loss_short - precio_de_entrada) / precio_de_entrada * 100)
+                                    logger(f"{symbol} Porcentaje de SL: {sl_porcentaje:.2f}%")
+                                    hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_de_entrada, "Buy", sl_porcentaje))
+                                    hilo_monitoreo.start()
+                            
+                        else:
+                            stop_loss_long,atr_actual,multiplicador_atr,lastprice = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
+                            logger(f"{symbol} stop_loss_long: {stop_loss_long} atr_actual: {atr_actual} multiplicador_atr: {multiplicador_atr} lastprice: {lastprice}")
+                            result_sl = establecer_stop_loss2(symbol, stop_loss_long)
+
+                            if result_sl:
+                                logger(f"{symbol} Stop loss activado")
+
+                                if monitoring == 1:
+                                    # Iniciar el monitoreo de la operación
+                                    # Calcular el % absoluto entre stop loss y precio de entrada
+                                    sl_porcentaje = abs((stop_loss_long - precio_de_entrada) / precio_de_entrada * 100)
+                                    logger(f"{symbol} Porcentaje de SL: {sl_porcentaje:.2f}%")
+                                    hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_de_entrada, "Sell", sl_porcentaje))
+                                    hilo_monitoreo.start()
+                                
+                    else:
+                        logger(f"Hay una posicion abierta en {symbol} espero 60 segundos")
+                        time.sleep(60)
+                else:
+
+                    if symbol in opened_positions:
+                        opened_positions.remove(symbol)
+
+                    if len(opened_positions) >= max_ops:
+                        logger(f"Se alcanzó el límite de posiciones abiertas | {max_ops}.")
+                        time.sleep(60)
+                        continue
+
+                    if bucle_cnt < 2:
+                        logger(f"no OPERAR aun | {bucle_cnt}.")
+                        time.sleep(20)
+                        continue
+
+                    # Obtener datos historicos
+                    datam = obtener_datos_historicos(symbol, timeframe)
+                   
+                    open_prices = np.array(datam[1])
+                    high_prices = np.array(datam[2])
+                    low_prices = np.array(datam[3])
+                    close_prices = np.array(datam[4])
+                    volumes = np.array(datam[5])
+
+                    data = calcular_bandas_bollinger(datam)
+                    bb_width = data['BB_Width_%']
+                    if bb_width < Bollinger_bands_width:
+                        time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                        continue;
+                        
+
+                    # Crear un DataFrame de pandas con los datos
+                    df = pd.DataFrame({
+                        'open': open_prices,
+                        'high': high_prices,
+                        'low': low_prices,
+                        'close': close_prices,
+                        'volume': volumes
+                    })
+
+                    ticker = client.get_tickers(category='linear', symbol=symbol)
+                    precio = float(ticker['result']['list'][0]['lastPrice'])
+                    fundingRate = float(ticker['result']['list'][0]['fundingRate'])
+
+                    if abs(fundingRate) > 0.0015:  # 0.1% as decimal
+                        logger(f"{symbol} Funding rate demasiado alto: {(fundingRate*100):.4f}, saltando")
+                        time.sleep(random.randint(sleep_rand_from*2, sleep_rand_to*2))
+                        continue
+
+                    if bucle_cnt >= random.randint(30, 80):
+                        sop_res = get_syr_n(symbol)
+                        bucle_cnt = 2
+
+                    signal_long  = detectar_reversion_alcista(df, sop_res['soportes_total'], top_rsi, bottom_rsi)
+                    signal_short  = detectar_reversion_bajista(df, sop_res['resistencias_total'], top_rsi, bottom_rsi)
+
+                    rsi = talib.RSI(close_prices, timeperiod=14)
+
+                    # Calcular la distancia porcentual hasta el soporte más cercano
+                    closest_support = None
+                    min_distance_percent = float('inf')
+                    if len(sop_res['soportes_total']) > 0:
+                        for support in sop_res['soportes_total']:
+                            distance_percent = abs(precio - support) / precio * 100
+                            if distance_percent < min_distance_percent:
+                                min_distance_percent = distance_percent
+                                closest_support = support
+
+                    # Calcular la distancia porcentual hasta la resistencia más cercana
+                    closest_resistance = None
+                    min_resistance_distance = float('inf')
+                    if len(sop_res['resistencias_total']) > 0:
+                        for resistance in sop_res['resistencias_total']:
+                            distance_percent = abs(precio - resistance) / precio * 100
+                            if distance_percent < min_resistance_distance:
+                                min_resistance_distance = distance_percent
+                                closest_resistance = resistance
+
+
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tb:{signal_short.iloc[-1]}\ta:{signal_long.iloc[-1]}\tff: {(fundingRate*100):.4f}\tsupport: {min_distance_percent:.2f}%\tresistance: {min_resistance_distance:.2f}%"
+                    logger(log_message)
+                
+                        
+                    if signal_short.iloc[-1] == 1:
+
+                        if len(opened_positions_short) >= max_ops_short:
+                            logger(f"{symbol:<18} operaciones abiertas en short {len(opened_positions_short)} | maximo configurado es {max_ops_short}.")
+                            time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                            continue
+
+                        # Datos de la moneda precio y pasos.
+                        step = client.get_instruments_info(category="linear", symbol=symbol)
+                        precision_step = float(step['result']['list'][0]["lotSizeFilter"]["qtyStep"])
+
+                        saldo_usdt = obtener_saldo_usdt()
+                        usdt = saldo_usdt * (account_percentage / 100)
+                        if saldo_usdt < account_usdt_limit:
+                            time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                            continue
+
+                        # Calcular ATR para ajustar el tamaño de la posición
+                        atr = talib.ATR(high_prices, low_prices, close_prices, timeperiod=14)
+                        atr_actual = atr[-1]
+                        logger(f"{symbol} ATR actual: {atr_actual:.5f}")
+
+                        # Ajustar el importe de USDT según el ATR
+                        # Si el ATR es muy grande, reducimos la exposición para limitar el riesgo
+                        max_atr_riesgo = precio * 0.03  # Considera un 3% como ATR de referencia
+                        logger(f"{symbol} ATR máximo permitido: {max_atr_riesgo:.5f}")
+                        if atr_actual > max_atr_riesgo:
+                            # Reducir el importe proporcionalmente al exceso de ATR
+                            factor_reduccion = max_atr_riesgo / atr_actual
+                            usdt = usdt * factor_reduccion
+                            logger(f"{symbol} ATR elevado: {atr_actual:.5f}, reduciendo posición por factor: {factor_reduccion:.2f}")
+
+                        # Calcular el stop loss y verificar máxima pérdida
+                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
+                        max_perdida_permitida = saldo_usdt * (sl_percentaje_account /  100)  # Máximo 2% del saldo total
+                        perdida_estimada = abs((precio - stop_loss_estimado) * (usdt / precio))
+                        logger(f"{symbol} Pérdida estimada: {perdida_estimada:.2f} USDT")
+                        logger(f"{symbol} Pérdida máxima permitida: {max_perdida_permitida:.2f} USDT")
+
+                        if perdida_estimada > max_perdida_permitida:
+                            factor_reduccion = max_perdida_permitida / perdida_estimada
+                            usdt = usdt * factor_reduccion
+                            logger(f"{symbol} Reduciendo posición para limitar pérdida: {perdida_estimada:.2f} USDT a {max_perdida_permitida:.2f} USDT")
+
+                        logger(f"{symbol} usdt final a invertir: {usdt}")
+
+                        if usdt < 5:
+                            logger(f"{symbol} Posición insuficiente para operar usdt: {usdt}")
+                            continue
+                        
+                        precision = precision_step
+                        qty = usdt / precio
+                        qty = qty_precision(qty, precision)
+                        if qty.is_integer():
+                            qty = int(qty)
+                        logger(f"{symbol} Cantidad de monedas a vender: " + str(qty))
+
+                        stop_loss_param,_,_,_ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
+                        take_profit_param,_,_,_ = establecer_take_profit_dinamico(df, tp_multiplicador, tipo_trade='short', timeframe=timeframe)
+                        crear_orden_con_stoploss_takeprofit(symbol, "Sell", "Market", qty,stop_loss_param,take_profit_param)
+                        if monitoring == 1:
+                            # Iniciar el monitoreo de la operación
+                            precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
+                            # Calcular el % absoluto entre stop loss y precio de entrada
+                            sl_porcentaje = abs((stop_loss_param - precio_entrada) / precio_entrada * 100)
+                            logger(f"{symbol} Porcentaje de SL: {sl_porcentaje:.2f}%")
+                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Sell", sl_porcentaje))
+                            hilo_monitoreo.start()
+
+                    if signal_long.iloc[-1] == 1:
+
+                        if len(opened_positions_long) >= max_ops_long:
+                            logger(f"{symbol:<18} operaciones abiertas en long {len(opened_positions_long)} | maximo configurado es {max_ops_long}.")
+                            time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                            continue
+
+                        # Datos de la moneda precio y pasos.
+                        step = client.get_instruments_info(category="linear", symbol=symbol)
+                        precision_step = float(step['result']['list'][0]["lotSizeFilter"]["qtyStep"])
+
+                        saldo_usdt = obtener_saldo_usdt()
+                        usdt = saldo_usdt * (account_percentage / 100)
+
+                        if saldo_usdt < account_usdt_limit:
+                            continue
+
+                        # Calcular ATR para ajustar el tamaño de la posición
+                        atr = talib.ATR(high_prices, low_prices, close_prices, timeperiod=14)
+                        atr_actual = atr[-1]
+                        logger(f"{symbol} ATR actual: {atr_actual:.5f}")
+
+                        # Ajustar el importe de USDT según el ATR
+                        # Si el ATR es muy grande, reducimos la exposición para limitar el riesgo
+                        max_atr_riesgo = precio * 0.03  # Considera un 1% como ATR de referencia
+                        logger(f"{symbol} ATR máximo permitido: {max_atr_riesgo:.5f}")
+                        if atr_actual > max_atr_riesgo:
+                            # Reducir el importe proporcionalmente al exceso de ATR
+                            factor_reduccion = max_atr_riesgo / atr_actual
+                            usdt = usdt * factor_reduccion
+                            logger(f"{symbol} ATR elevado: {atr_actual:.5f}, reduciendo posición por factor: {factor_reduccion:.2f}")
+
+
+                        # Calcular el stop loss y verificar máxima pérdida
+                        stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='long', timeframe=timeframe)
+                        max_perdida_permitida = saldo_usdt * (sl_percentaje_account /  100)   # Máximo 2% del saldo total
+                        perdida_estimada = abs((precio - stop_loss_estimado) * (usdt / precio))
+                        logger(f"{symbol} Pérdida estimada: {perdida_estimada:.2f} USDT")
+                        logger(f"{symbol} Pérdida máxima permitida: {max_perdida_permitida:.2f} USDT")
+
+                        if perdida_estimada > max_perdida_permitida:
+                            factor_reduccion = max_perdida_permitida / perdida_estimada
+                            usdt = usdt * factor_reduccion
+                            logger(f"{symbol} Reduciendo posición para limitar pérdida: {perdida_estimada:.2f} USDT a {max_perdida_permitida:.2f} USDT")
+
+                        logger(f"{symbol} usdt final a invertir: {usdt}")
+                        
+                        if usdt < 5:
+                            logger(f"{symbol} Posición insuficiente para operar usdt: {usdt}")
+                            continue
+
+                        precision = precision_step
+                        qty = usdt / precio
+                        qty = qty_precision(qty, precision)
+                        if qty.is_integer():
+                            qty = int(qty)
+
+                        logger(f"{symbol} Cantidad de monedas a comprar: " + str(qty))
+                        stop_loss_param,_,_,_ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='long', timeframe=timeframe)
+                        take_profit_param,_,_,_ = establecer_take_profit_dinamico(df, tp_multiplicador, tipo_trade='long', timeframe=timeframe)
+                        crear_orden_con_stoploss_takeprofit(symbol, "Buy", "Market", qty,stop_loss_param,take_profit_param)
+
+                        if monitoring == 1:
+                            # Iniciar el monitoreo de la operación
+                            precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
+                            # Calcular el % absoluto entre stop loss y precio de entrada
+                            sl_porcentaje = abs((stop_loss_param - precio_entrada) / precio_entrada * 100)
+                            logger(f"{symbol} Porcentaje de SL: {sl_porcentaje:.2f}%")
+                            hilo_monitoreo = threading.Thread(target=monitorear_operaciones_abiertas, args=(symbol, precio_entrada, "Buy", sl_porcentaje))
+                            hilo_monitoreo.start()
+
+            except Exception as e:
+                print(e)
+                logger(f"Error en el bot {symbol}: {e}")
+                time.sleep(60)
+
+         time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+
 
 
 def get_syr(symbol):
@@ -1711,6 +2024,22 @@ def get_syr(symbol):
         return item
     except Exception as e:
         logger(f"Error en get_syr {symbol}: {e}")
+        
+    return {'soportes_cerca': [], 'resistencias_cerca': [], 'valor_actual': 0, 'soportes_total': [], 'resistencias_total': [], 'niveles': []}
+
+def get_syr_n(symbol):
+    global soportes_resistencias
+
+    try: 
+        df = obtener_datos_historicos_df(symbol, interval="240")
+        niveles_fuertes = calcular_soportes_resistencias_fuertes(df, ventana=10, tolerancia=0.005, min_toques=1)
+        item = {'soportes_cerca': niveles_fuertes['soportes'], 'resistencias_cerca': niveles_fuertes['resistencias'], 'valor_actual': 0, 'soportes_total': niveles_fuertes['soportes'], 'resistencias_total': niveles_fuertes['resistencias'], 'niveles': niveles_fuertes}
+        soportes_resistencias[symbol] = item
+
+        logger(f"{symbol} ---- Obteniendo soportes y resistencias en 1 nivels ---- nivel: {item['niveles']}")
+        return item
+    except Exception as e:
+        logger(f"Error en get_syr_n {symbol}: {e}")
         
     return {'soportes_cerca': [], 'resistencias_cerca': [], 'valor_actual': 0, 'soportes_total': [], 'resistencias_total': [], 'niveles': []}
 
@@ -1781,4 +2110,13 @@ if strategy == 9: # ema
     hilos = []
     for simbolo in otros_simbolos:
         hilo = threading.Thread(target=operar9, args=([simbolo],)) 
+        hilo.start()
+
+
+
+if strategy == 10: # ema
+    hilos = []
+    for simbolo in otros_simbolos:
+        item = get_syr_n(simbolo)
+        hilo = threading.Thread(target=operar10, args=([simbolo],item,)) 
         hilo.start()

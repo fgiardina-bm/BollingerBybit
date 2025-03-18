@@ -2,7 +2,32 @@ import pandas as pd
 import numpy as np
 import requests
 from scipy.signal import argrelextrema
+from pybit.unified_trading import HTTP
 
+def obtener_datos_historicos_df(symbol, interval, limite=200):
+    response = HTTP().get_kline(category="linear",symbol=symbol, interval=interval, limite=limite)
+    if "result" in response:
+        data = pd.DataFrame(response['result']['list']).astype(float)
+        data[0] = pd.to_datetime(data[0], unit='ms')
+        data.set_index(0, inplace=True)
+        data = data[::-1].reset_index(drop=True)
+
+        open_prices = np.array(data[1])
+        high_prices = np.array(data[2])
+        low_prices = np.array(data[3])
+        close_prices = np.array(data[4])
+        volumes = np.array(data[5])
+
+        df = pd.DataFrame({
+            'open': open_prices,
+            'high': high_prices,
+            'low': low_prices,
+            'close': close_prices,
+            'volume': volumes
+        })
+        return df
+    else:
+        raise Exception("Error al obtener datos historicos: " + str(response))
 
 def obtener_datos_futuros_bybit(symbol="BTCUSDT", interval="60", limit=200):
     """Obtiene datos históricos de Bybit para un par dado."""
@@ -63,9 +88,9 @@ def contar_toques(df, niveles, tolerancia, min_toques=4):
         toques = ((df['low'] <= nivel * (1 + tolerancia)) & (df['high'] >= nivel * (1 - tolerancia))).sum()
         if toques >= min_toques:
             conteo[nivel] = toques
-    return sorted(conteo, key=conteo.get, reverse=True)[:3]  # Top 3 niveles con más toques
+    return sorted(conteo, key=conteo.get, reverse=True)[:5]  # Top 3 niveles con más toques
 
-def calcular_soportes_resistencias_fuertes(df, ventana=10, tolerancia=0.005, min_toques=4):
+def calcular_soportes_resistencias_fuertes(df, ventana=10, tolerancia=0.005, min_toques=1):
     """Calcula los 3 soportes y resistencias más fuertes según la cantidad de veces que han sido tocados."""
     niveles = calcular_soportes_resistencias(df, ventana, tolerancia)
     soportes_fuertes = contar_toques(df, niveles["soportes"], tolerancia, min_toques)
@@ -75,8 +100,8 @@ def calcular_soportes_resistencias_fuertes(df, ventana=10, tolerancia=0.005, min
         "resistencias": sorted(resistencias_fuertes, reverse=True)
     }
 
-df_btc = obtener_datos_futuros_binance("BTCUSDT", intervalo="4h")
-niveles_fuertes = calcular_soportes_resistencias_fuertes(df_btc, ventana=10, tolerancia=0.005, min_toques=1)
+df = obtener_datos_historicos_df("BERAUSDT", interval="240")
+niveles_fuertes = calcular_soportes_resistencias_fuertes(df, ventana=10, tolerancia=0.005, min_toques=1)
 
-print("📉 **Soportes Fuertes**:", niveles_fuertes['soportes'])
-print("📈 **Resistencias Fuertes**: ", niveles_fuertes['resistencias'])
+# print("📉 **Soportes Fuertes**:", niveles_fuertes['soportes'])
+# print("📈 **Resistencias Fuertes**: ", niveles_fuertes['resistencias'])

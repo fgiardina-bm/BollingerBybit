@@ -81,6 +81,59 @@ def obtener_simbolos_mayor_volumen(cnt=10):
         logger(f"Error al obtener los símbolos con mayor volumen: {e}")
         return []
 
+def obtener_simbolos_mayor_volumen_binance(cnt=10):
+    """
+    Obtiene los símbolos con mayor volumen en Binance.
+    
+    Args:
+        cnt (int): Número de símbolos a obtener (default: 10)
+        
+    Returns:
+        list: Lista de símbolos con mayor volumen
+    """
+    global black_list_symbols
+    
+    try:
+        # Inicializar el cliente de Binance (asumiendo que ya está importado)
+        exchange = ccxt.binance({
+            'enableRateLimit': True,
+            'options': {'defaultType': 'future'}  # Para usar el mercado de futuros
+        })
+        
+        # Obtener todos los tickers
+        tickers = exchange.fetch_tickers()
+
+        usdt_tickers = []
+        for i, (symbol, data) in enumerate(list(tickers.items())):
+            if symbol.endswith('USDT'):
+                item = {
+                    "symbol":data['info']['symbol'],
+                    "quoteVolume": data['info']['quoteVolume']
+                }
+                usdt_tickers.append(item)
+
+
+        # Ordenar la lista por quoteVolume de mayor a menor
+        sorted_data = sorted(usdt_tickers, key=lambda x: float(x['quoteVolume']), reverse=True)
+
+        # Obtener los top símbolos
+        top_simbolos = []
+        # Extract symbols from the top entries based on volume
+        for item in sorted_data[:cnt]:
+            top_simbolos.append(item['symbol'])
+            
+            # Log the symbols with their volume for reference
+            logger(f"Símbolo: {item['symbol']} Volumen: {float(item['quoteVolume']) / 1000000:.2f} M")
+        
+
+        # Remover los símbolos que están en la lista negra
+        top_simbolos = [symbol for symbol in top_simbolos if symbol not in black_list_symbols]
+        return top_simbolos
+    
+    except Exception as e:
+        logger(f"Error al obtener los símbolos con mayor volumen en Binance: {e}")
+        return []
+
 def obtener_simbolos_mayor_open_interest(cnt=10):
     try:
         tickers = client.get_tickers(category='linear')

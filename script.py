@@ -2015,37 +2015,28 @@ def operar10(simbolos,sr): # nuevo calculo soporte y resistencia
 def get_syr(symbol):
     global soportes_resistencias
 
-    try: 
-        s,r,va,st,rt,niveles = get_soportes_resistencia(symbol)
-        item = {'soportes_cerca': s, 'resistencias_cerca': r, 'valor_actual': va, 'soportes_total': st, 'resistencias_total': rt, 'niveles': niveles}
-        soportes_resistencias[symbol] = item
+    s,r,va,st,rt,niveles = get_soportes_resistencia(symbol)
+    item = {'soportes_cerca': s, 'resistencias_cerca': r, 'valor_actual': va, 'soportes_total': st, 'resistencias_total': rt, 'niveles': niveles}
+    soportes_resistencias[symbol] = item
 
-        logger(f"{symbol} ---- Obteniendo soportes y resistencias en 3 niveles ---- niveles: {item['niveles']}")
-        return item
-    except Exception as e:
-        logger(f"Error en get_syr {symbol}: {e}")
-        
-    return {'soportes_cerca': [], 'resistencias_cerca': [], 'valor_actual': 0, 'soportes_total': [], 'resistencias_total': [], 'niveles': []}
+    logger(f"{symbol} ---- Obteniendo soportes y resistencias en 3 niveles ---- niveles: {item['niveles']}")
+    return item
 
 def get_syr_n(symbol):
     global soportes_resistencias
+ 
+    df = obtener_datos_historicos_df(symbol, interval="240")
+    niveles_fuertes = calcular_soportes_resistencias_fuertes(df, ventana=10, tolerancia=0.005, min_toques=1)
+    item = {'soportes_cerca': niveles_fuertes['soportes'], 'resistencias_cerca': niveles_fuertes['resistencias'], 'valor_actual': 0, 'soportes_total': niveles_fuertes['soportes'], 'resistencias_total': niveles_fuertes['resistencias'], 'niveles': niveles_fuertes}
+    soportes_resistencias[symbol] = item
 
-    try: 
-        df = obtener_datos_historicos_df(symbol, interval="240")
-        niveles_fuertes = calcular_soportes_resistencias_fuertes(df, ventana=10, tolerancia=0.005, min_toques=1)
-        item = {'soportes_cerca': niveles_fuertes['soportes'], 'resistencias_cerca': niveles_fuertes['resistencias'], 'valor_actual': 0, 'soportes_total': niveles_fuertes['soportes'], 'resistencias_total': niveles_fuertes['resistencias'], 'niveles': niveles_fuertes}
-        soportes_resistencias[symbol] = item
+    logger(f"{symbol} ---- Obteniendo soportes y resistencias en 1 nivels ---- nivel: {item['niveles']}")
+    return item
 
-        logger(f"{symbol} ---- Obteniendo soportes y resistencias en 1 nivels ---- nivel: {item['niveles']}")
-        return item
-    except Exception as e:
-        logger(f"Error en get_syr_n {symbol}: {e}")
-        
-    return {'soportes_cerca': [], 'resistencias_cerca': [], 'valor_actual': 0, 'soportes_total': [], 'resistencias_total': [], 'niveles': []}
 
 
 # Lista de otros símbolos a buscar
-otros_simbolos = obtener_simbolos_mayor_volumen(cnt_symbols)
+otros_simbolos = obtener_simbolos_mayor_volumen_binance(cnt_symbols)
 
 
 if strategy == 1:
@@ -2117,6 +2108,9 @@ if strategy == 9: # ema
 if strategy == 10: # ema
     hilos = []
     for simbolo in otros_simbolos:
-        item = get_syr_n(simbolo)
-        hilo = threading.Thread(target=operar10, args=([simbolo],item,)) 
-        hilo.start()
+        try:
+            item = get_syr_n(simbolo)
+            hilo = threading.Thread(target=operar10, args=([simbolo],item,)) 
+            hilo.start()
+        except Exception as e:
+            logger(f"Error en get_syr_n {simbolo}: {e}")

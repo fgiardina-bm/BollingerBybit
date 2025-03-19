@@ -2093,9 +2093,12 @@ if strategy == 7:
 if strategy == 8: # varios
     hilos = []
     for simbolo in otros_simbolos:
-        item = get_syr(simbolo)
-        hilo = threading.Thread(target=operar8, args=([simbolo],item,)) 
-        hilo.start()
+        try:
+            item = get_syr(simbolo)
+            hilo = threading.Thread(target=operar8, args=([simbolo],item,)) 
+            hilo.start()
+        except Exception as e:
+            logger(f"Error en get_syr {simbolo}: {e}")
 
 if strategy == 9: # ema
     hilos = []

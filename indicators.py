@@ -728,3 +728,284 @@ def detectar_reversion_bajista(df, resistencias, top_rsi, bottom_rsi):
     return reversion_bajista
 
 
+def calcular_probabilidad_reversion(df, timeframe="240", ventana_analisis=20):
+    """
+    Calcula la probabilidad de reversión de tendencia basada en múltiples indicadores técnicos.
+    
+    Args:
+        df (pd.DataFrame): DataFrame con datos OHLCV (open, high, low, close, volume)
+        timeframe (str): Periodo de tiempo para ajustar la sensibilidad de ciertos indicadores
+        ventana_analisis (int): Número de velas para el análisis de patrones históricos
+        
+    Returns:
+        tuple: (
+            probabilidad_reversion (float): Probabilidad de reversión (0-100%),
+            direccion_probable (str): Dirección probable de la reversión ('alcista' o 'bajista'),
+            factores_contribuyentes (dict): Factores que contribuyen a la señal
+        )
+    """
+
+    # Extraer datos
+    open_prices = df['open'].values
+    high_prices = df['high'].values
+    low_prices = df['low'].values
+    close_prices = df['close'].values
+    volumes = df['volume'].values
+    
+    # 1. Calcular indicadores técnicos
+    # RSI (sobrecompra/sobreventa)
+    rsi = talib.RSI(close_prices, timeperiod=14)
+    rsi_actual = rsi[-1]
+    
+    # Bandas de Bollinger
+    upper, middle, lower = talib.BBANDS(close_prices, timeperiod=20, nbdevup=2, nbdevdn=2)
+    bb_width = (upper[-1] - lower[-1]) / middle[-1] * 100
+    precio_vs_bb_upper = (close_prices[-1] - upper[-1]) / upper[-1] * 100
+    precio_vs_bb_lower = (close_prices[-1] - lower[-1]) / lower[-1] * 100
+    
+    # Estocástico
+    slowk, slowd = talib.STOCH(high_prices, low_prices, close_prices, 
+                               fastk_period=14, slowk_period=3, slowk_matype=0, 
+                               slowd_period=3, slowd_matype=0)
+    stoch_k = slowk[-1]
+    stoch_d = slowd[-1]
+    
+    # MACD
+    macd_line, signal_line, macd_hist = talib.MACD(close_prices, fastperiod=12, slowperiod=26, signalperiod=9)
+    macd_actual = macd_line[-1]
+    signal_actual = signal_line[-1]
+    hist_actual = macd_hist[-1]
+    
+    # ADX (fuerza de la tendencia)
+    adx = talib.ADX(high_prices, low_prices, close_prices, timeperiod=14)
+    adx_actual = adx[-1]
+    
+    # ATR (volatilidad)
+    atr = talib.ATR(high_prices, low_prices, close_prices, timeperiod=14)
+    atr_actual = atr[-1]
+    atr_percent = atr_actual / close_prices[-1] * 100
+    
+    # 2. Detectar patrones de velas (señales de reversión)
+    # Patrones alcistas
+    hammer = talib.CDLHAMMER(open_prices, high_prices, low_prices, close_prices)[-1]
+    piercing = talib.CDLPIERCING(open_prices, high_prices, low_prices, close_prices)[-1]
+    morning_star = talib.CDLMORNINGSTAR(open_prices, high_prices, low_prices, close_prices)[-1]
+    engulfing_alcista = talib.CDLENGULFING(open_prices, high_prices, low_prices, close_prices)[-1] > 0
+    
+    # Patrones bajistas
+    hanging_man = talib.CDLHANGINGMAN(open_prices, high_prices, low_prices, close_prices)[-1]
+    shooting_star = talib.CDLSHOOTINGSTAR(open_prices, high_prices, low_prices, close_prices)[-1]
+    evening_star = talib.CDLEVENINGSTAR(open_prices, high_prices, low_prices, close_prices)[-1]
+    engulfing_bajista = talib.CDLENGULFING(open_prices, high_prices, low_prices, close_prices)[-1] < 0
+    
+    # 3. Detectar divergencias
+    # Crear serie de tendencia de precio
+    ventana = min(ventana_analisis, len(close_prices) - 1)
+    precio_tendencia = np.polyfit(np.arange(ventana), close_prices[-ventana:], 1)[0]
+    rsi_tendencia = np.polyfit(np.arange(ventana), rsi[-ventana:], 1)[0]
+    
+    # Detección de divergencias
+    divergencia_bajista = precio_tendencia > 0 and rsi_tendencia < 0
+    divergencia_alcista = precio_tendencia < 0 and rsi_tendencia > 0
+    
+    # 4. Volumen inusual
+    volumen_promedio = np.mean(volumes[-20:])
+    volumen_actual = volumes[-1]
+    volumen_inusual = volumen_actual > volumen_promedio * 1.5
+    
+    # 5. Detectar soportes y resistencias
+    # Simplificado: usaremos máximos y mínimos recientes como proxy
+    max_reciente = np.max(high_prices[-ventana_analisis:])
+    min_reciente = np.min(low_prices[-ventana_analisis:])
+    
+    # Distancia a soportes y resistencias
+    distancia_a_max = (max_reciente - close_prices[-1]) / close_prices[-1] * 100
+    distancia_a_min = (close_prices[-1] - min_reciente) / close_prices[-1] * 100
+    
+    # 6. Análisis de tendencia
+    ema20 = talib.EMA(close_prices, timeperiod=20)
+    ema50 = talib.EMA(close_prices, timeperiod=50)
+    ema200 = talib.EMA(close_prices, timeperiod=200)
+    
+    tendencia_corto_alcista = close_prices[-1] > ema20[-1]
+    tendencia_medio_alcista = close_prices[-1] > ema50[-1]
+    tendencia_largo_alcista = close_prices[-1] > ema200[-1]
+    
+    cruce_emas = (ema20[-2] < ema50[-2] and ema20[-1] > ema50[-1]) or (ema20[-2] > ema50[-2] and ema20[-1] < ema50[-1])
+
+    # 7. Saturación de condiciones para timeframes específicos
+    if timeframe in ["60", "240", "D"]:
+        # Para timeframes mayores, damos más peso a indicadores de tendencia
+        factor_timeframe = 1.2
+    else:
+        # Para timeframes menores, damos más peso a indicadores de momentum
+        factor_timeframe = 0.8
+    
+    # 8. Calcular probabilidades
+    factores_alcistas = 0
+    max_factores_alcistas = 0
+    factores_bajistas = 0
+    max_factores_bajistas = 0
+    
+    # --- FACTORES ALCISTAS ---
+    # RSI en sobreventa
+    if rsi_actual < 30:
+        factores_alcistas += 20
+    elif rsi_actual < 40:
+        factores_alcistas += 10
+    max_factores_alcistas += 20
+    
+    # Estocástico en sobreventa
+    if stoch_k < 20 and stoch_d < 20:
+        factores_alcistas += 15
+    max_factores_alcistas += 15
+    
+    # Precio cerca/debajo de banda inferior de Bollinger
+    if precio_vs_bb_lower <= 0:
+        factores_alcistas += 15
+    elif precio_vs_bb_lower < 2:
+        factores_alcistas += 8
+    max_factores_alcistas += 15
+    
+    # Patrones de velas alcistas
+    if hammer > 0 or piercing > 0 or morning_star > 0 or engulfing_alcista:
+        factores_alcistas += 15
+    max_factores_alcistas += 15
+    
+    # Divergencia alcista
+    if divergencia_alcista:
+        factores_alcistas += 20
+    max_factores_alcistas += 20
+    
+    # Volumen inusual en mínimos
+    if volumen_inusual and close_prices[-1] < ema20[-1]:
+        factores_alcistas += 10
+    max_factores_alcistas += 10
+    
+    # Cercanía a soporte
+    if distancia_a_min < 3:
+        factores_alcistas += 15
+    elif distancia_a_min < 7:
+        factores_alcistas += 8
+    max_factores_alcistas += 15
+    
+    # MACD por debajo de la línea de señal pero acercándose
+    if macd_actual < signal_actual and macd_actual > macd_line[-2]:
+        factores_alcistas += 10
+    max_factores_alcistas += 10
+    
+    # --- FACTORES BAJISTAS ---
+    # RSI en sobrecompra
+    if rsi_actual > 70:
+        factores_bajistas += 20
+    elif rsi_actual > 60:
+        factores_bajistas += 10
+    max_factores_bajistas += 20
+    
+    # Estocástico en sobrecompra
+    if stoch_k > 80 and stoch_d > 80:
+        factores_bajistas += 15
+    max_factores_bajistas += 15
+    
+    # Precio cerca/arriba de banda superior de Bollinger
+    if precio_vs_bb_upper >= 0:
+        factores_bajistas += 15
+    elif precio_vs_bb_upper > -2:
+        factores_bajistas += 8
+    max_factores_bajistas += 15
+    
+    # Patrones de velas bajistas
+    if hanging_man < 0 or shooting_star < 0 or evening_star < 0 or engulfing_bajista:
+        factores_bajistas += 15
+    max_factores_bajistas += 15
+    
+    # Divergencia bajista
+    if divergencia_bajista:
+        factores_bajistas += 20
+    max_factores_bajistas += 20
+    
+    # Volumen inusual en máximos
+    if volumen_inusual and close_prices[-1] > ema20[-1]:
+        factores_bajistas += 10
+    max_factores_bajistas += 10
+    
+    # Cercanía a resistencia
+    if distancia_a_max < 3:
+        factores_bajistas += 15
+    elif distancia_a_max < 7:
+        factores_bajistas += 8
+    max_factores_bajistas += 15
+    
+    # MACD por encima de la línea de señal pero alejándose
+    if macd_actual > signal_actual and macd_actual < macd_line[-2]:
+        factores_bajistas += 10
+    max_factores_bajistas += 10
+
+    # Considerar fuerza de tendencia (ADX)
+    if adx_actual > 25:
+        # Tendencia fuerte actual - más difícil de revertir
+        factores_alcistas *= 0.9
+        factores_bajistas *= 0.9
+    elif adx_actual < 15:
+        # Tendencia débil - más fácil de revertir
+        factores_alcistas *= 1.1
+        factores_bajistas *= 1.1
+    
+    # Ajustar por timeframe
+    factores_alcistas *= factor_timeframe
+    factores_bajistas *= factor_timeframe
+    
+    # 9. Calcular probabilidad final y dirección
+    prob_alcista = (factores_alcistas / max_factores_alcistas) * 100
+    prob_bajista = (factores_bajistas / max_factores_bajistas) * 100
+    
+    # Limitar a 100%
+    prob_alcista = min(prob_alcista, 100)
+    prob_bajista = min(prob_bajista, 100)
+    
+    # Decidir dirección y probabilidad final
+    if prob_alcista > prob_bajista:
+        direccion = 'alcista'
+        probabilidad = prob_alcista
+    else:
+        direccion = 'bajista'
+        probabilidad = prob_bajista
+    
+    # Normalizar la probabilidad basada en volatilidad del mercado
+    # Alta volatilidad (ATR%) puede hacer reversiones más probables
+    if atr_percent > 3:  # Alta volatilidad
+        probabilidad *= 1.1
+    elif atr_percent < 1:  # Baja volatilidad
+        probabilidad *= 0.9
+    
+    probabilidad = min(probabilidad, 100)
+    
+    # Devolver factores detallados para análisis
+    factores_contribuyentes = {
+        'rsi': rsi_actual,
+        'estocástico_k': stoch_k,
+        'estocástico_d': stoch_d,
+        'bb_width': bb_width,
+        'bb_posicion': precio_vs_bb_lower if direccion == 'alcista' else precio_vs_bb_upper,
+        'patrones_vela': hammer + piercing + morning_star if direccion == 'alcista' else hanging_man + shooting_star + evening_star,
+        'divergencia': divergencia_alcista if direccion == 'alcista' else divergencia_bajista,
+        'volumen_ratio': volumen_actual / volumen_promedio,
+        'distancia_sr': distancia_a_min if direccion == 'alcista' else distancia_a_max,
+        'adx': adx_actual,
+        'atr_percent': atr_percent,
+        'emas': {
+            'ema20': tendencia_corto_alcista,
+            'ema50': tendencia_medio_alcista,
+            'ema200': tendencia_largo_alcista,
+            'cruce_emas': cruce_emas
+        },
+        'macd': {
+            'line': macd_actual,
+            'signal': signal_actual,
+            'hist': hist_actual
+        },
+        'tendencia_fuerza': adx_actual,
+        'timeframe': timeframe
+    }
+    
+    return probabilidad, direccion, factores_contribuyentes

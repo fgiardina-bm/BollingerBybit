@@ -39,6 +39,8 @@ COPY ./functions.py ./
 COPY ./config.py ./
 COPY ./indicators.py ./
 COPY ./sr.py ./
+COPY ./oscillator.py ./
+COPY ./oi.py ./
 
 # Instalar dependencias
 RUN pip install --no-cache-dir -r requirements.txt

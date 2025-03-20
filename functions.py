@@ -9,6 +9,7 @@ from decimal import Decimal, ROUND_DOWN, ROUND_FLOOR
 from concurrent.futures import ThreadPoolExecutor
 from config import *
 from indicators import *
+from oscillator import *
 import threading
 import numpy as np
 import matplotlib
@@ -43,6 +44,40 @@ def obtener_datos_historicos(symbol, interval, limite=200):
         return data
     else:
         raise Exception("Error al obtener datos historicos: " + str(response))
+
+
+def obtener_datos_historicos_binance(symbol, timeframe, limite=200):
+    """
+    Obtiene datos históricos de futuros de Binance y los convierte en un DataFrame.
+
+    Args:
+        symbol (str): Símbolo del par de trading (ej. "BTC/USDT").
+        timeframe (str): Intervalo de tiempo (ej. "1m", "5m", "1h", "1d").
+        limite (int): Número máximo de velas a obtener (default: 200).
+
+    Returns:
+        pd.DataFrame: DataFrame con columnas ['open', 'high', 'low', 'close', 'volume'].
+    """
+    try:
+        # Inicializar cliente de Binance para futuros
+        exchange = ccxt.binance({
+            'enableRateLimit': True,
+            'options': {'defaultType': 'future'}  # Especificar mercado de futuros
+        })
+
+        # Obtener datos OHLCV
+        ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limite)
+
+        # Convertir a DataFrame
+        df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')  # Convertir timestamp a datetime
+        df.set_index('timestamp', inplace=True)  # Establecer timestamp como índice
+
+        return df
+
+    except Exception as e:
+        print(f"Error al obtener datos históricos de Binance: {e}")
+        return None
 
 def buscar_precios_otros_simbolos(simbolos):
     while True:
@@ -856,7 +891,7 @@ def monitorear_operaciones_abiertas(symbol, precio_entrada, side, sl_callback=1)
                 precio_actual = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])
                 logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} - Precio actual: {precio_actual} - Precio de entrada: {precio_entrada}")
                 if side == 'Buy':
-                    if precio_actual > (pe * 1.005):
+                    if precio_actual > (pe * 1.01):
                         sl_progresive = sl_callback / counter_sl
                         nuevo_stop_loss = precio_actual * (1 - sl_progresive / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
@@ -864,7 +899,7 @@ def monitorear_operaciones_abiertas(symbol, precio_entrada, side, sl_callback=1)
                         counter_sl += sl_callback_progresive
                         logger(f"{test_mode} monitorear_operaciones_abiertas {symbol} Stop loss ajustado a {nuevo_stop_loss} para {symbol} en posición Buy")
                 else:
-                    if precio_actual < (pe * 0.995):
+                    if precio_actual < (pe * 0.99):
                         sl_progresive = sl_callback / counter_sl
                         nuevo_stop_loss = precio_actual * (1 + sl_progresive / 100)
                         establecer_stop_loss(symbol, nuevo_stop_loss)
@@ -1215,4 +1250,68 @@ def get_open_interest(symbol: str):
     
     except Exception as e:
         logger(f"Error: {str(e)}") 
+        return None
+
+
+
+def analizar_reversion_tendencia(symbol, timeframe="240"):
+    """
+    Analiza la probabilidad de reversión de tendencia para un símbolo específico.
+    
+    Args:
+        symbol (str): Símbolo a analizar (ej. "BTCUSDT")
+        timeframe (str): Timeframe del análisis 
+        
+    Returns:
+        dict: Resultado del análisis de reversión
+    """
+    try:
+        # Obtener datos históricos
+        datam = obtener_datos_historicos(symbol, timeframe)
+        
+        # Convertir a DataFrame de pandas
+        df = pd.DataFrame({
+            'open': np.array(datam[1]),
+            'high': np.array(datam[2]),
+            'low': np.array(datam[3]),
+            'close': np.array(datam[4]),
+            'volume': np.array(datam[5])
+        })
+        
+        # Calcular probabilidad de reversión
+        probabilidad, direccion, factores = calcular_probabilidad_reversion(df, timeframe)
+        
+        # Obtener precio actual
+        ticker = client.get_tickers(category='linear', symbol=symbol)
+        precio = float(ticker['result']['list'][0]['lastPrice'])
+        
+        resultado = {
+            'symbol': symbol,
+            'precio_actual': precio,
+            'timeframe': timeframe,
+            'probabilidad_reversion': round(probabilidad, 2),
+            'direccion_probable': direccion,
+            'factores_clave': {
+                'rsi': round(factores['rsi'], 2),
+                'adx': round(factores['adx'], 2),
+                'volatilidad_atr': round(factores['atr_percent'], 2),
+                'divergencia': factores['divergencia'],
+                'patrones_vela': factores['patrones_vela'] != 0
+            }
+        }
+
+        # try:
+        #     res = trend_reversal_probability(df)
+        # except Exception as e:
+        #     print(f"Error al calcular la probabilidad de reversión: {e}")
+        
+        logger(f"{symbol:<15}\t{precio:.5f} \tTF: {timeframe}\tProb. Reversión: {probabilidad:.2f}%\t\tDirección: {direccion}\tRSI: {factores['rsi']:.1f}")
+
+        t_log_message = f"{symbol};{precio:.5f};{timeframe};{probabilidad:.2f};{direccion};{factores['rsi']:.1f};{factores['adx']:.1f};{factores['atr_percent']:.1f};{factores['divergencia']};{factores['patrones_vela']}"
+        t_logger(t_log_message)
+
+        return resultado
+    
+    except Exception as e:
+        # logger(f"Error al analizar reversión para {symbol}: {e}")
         return None

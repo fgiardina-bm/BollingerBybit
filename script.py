@@ -1250,7 +1250,7 @@ def operar8(simbolos,sr):
                         time.sleep(random.randint(sleep_rand_from*2, sleep_rand_to*2))
                         continue
 
-                    if bucle_cnt >= random.randint(100, 150):
+                    if bucle_cnt >= random.randint(30, 80):
                         sop_res = get_syr(symbol)
                         bucle_cnt = 0
 
@@ -1280,7 +1280,7 @@ def operar8(simbolos,sr):
                                 closest_resistance = resistance
 
 
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tb:{signal_short.iloc[-1]}\ta:{signal_long.iloc[-1]}\tff: {(fundingRate*100):.4f}\tsupport: {min_distance_percent:.2f}%\tresistance: {min_resistance_distance:.2f}%"
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tb:{signal_short.iloc[-1]}\ta:{signal_long.iloc[-1]}\tff: {(fundingRate*100):.4f}\tsupport: {min_distance_percent:.2f}%\tresistance: {min_resistance_distance:.2f}%\t8"
                     logger(log_message)
                 
                         
@@ -1699,6 +1699,7 @@ def operar9(simbolos):
 
 
 def operar10(simbolos,sr): # nuevo calculo soporte y resistencia
+
     global opened_positions, opened_positions_short, opened_positions_long
     global saldo_usdt_inicial
     global api_key, api_secret, timeframe, tp_porcent, sl_porcent, cnt_symbols
@@ -1859,7 +1860,7 @@ def operar10(simbolos,sr): # nuevo calculo soporte y resistencia
                                 closest_resistance = resistance
 
 
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tb:{signal_short.iloc[-1]}\ta:{signal_long.iloc[-1]}\tff: {(fundingRate*100):.4f}\tsupport: {min_distance_percent:.2f}%\tresistance: {min_resistance_distance:.2f}%"
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tb:{signal_short.iloc[-1]}\ta:{signal_long.iloc[-1]}\tff: {(fundingRate*100):.4f}\tsupport: {min_distance_percent:.2f}%\tresistance: {min_resistance_distance:.2f}%\t10"
                     logger(log_message)
                 
                         
@@ -2011,6 +2012,24 @@ def operar10(simbolos,sr): # nuevo calculo soporte y resistencia
          time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
 
 
+def operar0(simbolos): # nuevo calculo soporte y resistencia
+    global opened_positions, opened_positions_short, opened_positions_long
+    global saldo_usdt_inicial
+    global api_key, api_secret, timeframe, tp_porcent, sl_porcent, cnt_symbols
+    global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
+    global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
+    global opened_positions_long, opened_positions_short
+    global max_ops_long, max_ops_short, sr_fib_tolerancia, sr_fib_velas,account_usdt_limit, order_book_limit, order_book_delay_divisor
+    global sl_multiplicador, tp_multiplicador
+    global sl_percentaje_account
+
+
+
+    while True:
+         for symbol in simbolos:
+            analizar_reversion_tendencia(symbol, timeframe=timeframe)
+
+         time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
 
 def get_syr(symbol):
     global soportes_resistencias
@@ -2110,10 +2129,23 @@ if strategy == 9: # ema
 
 if strategy == 10: # ema
     hilos = []
+    time.sleep(60)
     for simbolo in otros_simbolos:
         try:
             item = get_syr_n(simbolo)
+            time.sleep(10)
             hilo = threading.Thread(target=operar10, args=([simbolo],item,)) 
             hilo.start()
         except Exception as e:
             logger(f"Error en get_syr_n {simbolo}: {e}")
+
+
+
+if strategy == 0: # pruebas
+    hilos = []
+    for simbolo in otros_simbolos:
+        try:
+            hilo = threading.Thread(target=operar0, args=([simbolo],)) 
+            hilo.start()
+        except Exception as e:
+            logger(f"Error en strategy {simbolo}: {e}")

@@ -1033,7 +1033,7 @@ def operar7(simbolos,sr):
 
                     if bucle_cnt >= random.randint(200, 300):
                         sr = get_syr(symbol)
-                        bucle_cnt = 0
+                        bucle_cnt = 2
 
                     sma_50 = df['close'].rolling(window=50).mean()
                     sma_200 = df['close'].rolling(window=200).mean()
@@ -1212,7 +1212,7 @@ def operar8(simbolos,sr):
                         continue
 
                     if bucle_cnt < 2:
-                        logger(f"no OPERAR aun | {bucle_cnt}.")
+                        logger(f"{symbol} no OPERAR aun | {bucle_cnt}.")
                         time.sleep(20)
                         continue
 
@@ -1252,7 +1252,7 @@ def operar8(simbolos,sr):
 
                     if bucle_cnt >= random.randint(30, 80):
                         sop_res = get_syr(symbol)
-                        bucle_cnt = 0
+                        bucle_cnt = 2
 
                     signal_long  = detectar_reversion_alcista(df, sop_res['soportes_total'], top_rsi, bottom_rsi)
                     signal_short  = detectar_reversion_bajista(df, sop_res['resistencias_total'], top_rsi, bottom_rsi)
@@ -1523,7 +1523,7 @@ def operar9(simbolos):
                         continue
 
                     if bucle_cnt < 2:
-                        logger(f"no OPERAR aun | {bucle_cnt}.")
+                        logger(f"{symbol} no OPERAR aun | {bucle_cnt}.")
                         time.sleep(20)
                         continue
 
@@ -1792,7 +1792,7 @@ def operar10(simbolos,sr): # nuevo calculo soporte y resistencia
                         continue
 
                     if bucle_cnt < 2:
-                        logger(f"no OPERAR aun | {bucle_cnt}.")
+                        logger(f"{symbol} no OPERAR aun | {bucle_cnt}.")
                         time.sleep(20)
                         continue
 
@@ -2027,8 +2027,12 @@ def operar0(simbolos): # nuevo calculo soporte y resistencia
 
     while True:
          for symbol in simbolos:
-            analizar_reversion_tendencia(symbol, timeframe=timeframe)
-
+            # analizar_reversion_tendencia(symbol, timeframe=timeframe)
+            result, tendencia, proc, vtend, vporc,  ptendencia, pfuerza, pcambio_porcentual, pprecio_actual= get_open_interest_binance(symbol, "5m", 6)
+            # print(result)
+            print(f"{symbol:<15}\t{tendencia}\t{proc:.2f}%\t{vtend}\t{vporc:.2f}%\tptendencia: {ptendencia}\tpfuerza: {pfuerza:.2f}%\tpcambio_porcentual: {pcambio_porcentual:.2f}%\tprecio: {pprecio_actual:.5f}")
+            logger(f"{symbol:<15}\t{tendencia}\t{proc:.2f}%\t{vtend}\t{vporc:.2f}%\tptendencia: {ptendencia}\tpfuerza: {pfuerza:.2f}%\tpcambio_porcentual: {pcambio_porcentual:.2f}%\tprecio: {pprecio_actual:.5f}")
+            t_logger(f"{symbol};{tendencia};{proc:.2f};{vtend};{vporc:.2f};{ptendencia};{pfuerza:.2f};{pcambio_porcentual:.2f};{pprecio_actual:.5f}")
          time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
 
 def get_syr(symbol):
@@ -2143,8 +2147,10 @@ if strategy == 10: # ema
 
 if strategy == 0: # pruebas
     hilos = []
+    # otros_simbolos = ['AUCTIONUSDT']
     for simbolo in otros_simbolos:
         try:
+            time.sleep(1)
             hilo = threading.Thread(target=operar0, args=([simbolo],)) 
             hilo.start()
         except Exception as e:

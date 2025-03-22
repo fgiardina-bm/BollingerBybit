@@ -4,6 +4,7 @@ import numpy as np
 import talib
 from config import *
 import time
+import requests
 
 def calcular_rsi_talib(closes, window=14):
     rsi = talib.RSI(np.array(closes), timeperiod=window)
@@ -1009,3 +1010,272 @@ def calcular_probabilidad_reversion(df, timeframe="240", ventana_analisis=20):
     }
     
     return probabilidad, direccion, factores_contribuyentes
+
+
+def get_open_interest_binance(symbol="BTCUSDT", interval="5m", limit=6):
+        """
+        Obtiene el Open Interest de un símbolo en Binance para las últimas N velas en un intervalo específico.
+        
+        Parámetros:
+        - symbol (str): Par de trading, por defecto "BTCUSDT"
+        - interval (str): Intervalo de tiempo, por defecto "5m"
+        - limit (int): Número de velas a obtener, por defecto 20
+        
+        Retorna:
+        - pandas.DataFrame: DataFrame con el Open Interest y su timestamp
+        """
+        try:
+            
+            # Endpoint para obtener el Open Interest de Binance
+            url = f"https://fapi.binance.com/fapi/v1/openInterest"
+            
+            # Obtener Open Interest histórico
+            historical_url = f"https://fapi.binance.com/futures/data/openInterestHist"
+            params = {
+                "symbol": symbol,
+                "period": interval,
+                "limit": limit
+            }
+            
+            response = requests.get(historical_url, params=params)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Convertir a DataFrame
+                df = pd.DataFrame(data)
+                
+                # Convertir campos a tipos apropiados
+                df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+                df['sumOpenInterest'] = df['sumOpenInterest'].astype(float)
+                df['sumOpenInterestValue'] = df['sumOpenInterestValue'].astype(float)
+
+                # Añadir datos de precio al DataFrame de Open Interest
+                if 'timestamp' in df.columns:
+                    # Endpoint para obtener datos OHLCV
+                    klines_url = f"https://fapi.binance.com/fapi/v1/klines"
+                    klines_params = {
+                        "symbol": symbol,
+                        "interval": interval,
+                        "limit": limit
+                    }
+                    
+                    klines_response = requests.get(klines_url, params=klines_params)
+                    
+                    if klines_response.status_code == 200:
+                        klines_data = klines_response.json()
+                        
+                        # Crear DataFrame con datos OHLCV
+                        klines_df = pd.DataFrame(klines_data, columns=[
+                            'kline_open_time', 'open', 'high', 'low', 'close', 'volume',
+                            'kline_close_time', 'quote_asset_volume', 'number_of_trades',
+                            'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'
+                        ])
+                        
+                        # Convertir a tipos apropiados
+                        klines_df['kline_open_time'] = pd.to_datetime(klines_df['kline_open_time'], unit='ms')
+                        klines_df['open'] = klines_df['open'].astype(float)
+                        klines_df['high'] = klines_df['high'].astype(float)
+                        klines_df['low'] = klines_df['low'].astype(float)
+                        klines_df['close'] = klines_df['close'].astype(float)
+                        klines_df['volume'] = klines_df['volume'].astype(float)
+                        
+                        # Alinear timestamps entre OI y OHLCV (aproximadamente)
+                        df['kline_open_time'] = df['timestamp'].dt.floor('5min')
+                        klines_df['timestamp_key'] = klines_df['kline_open_time']
+                        
+                        # Combinar DataFrames
+                        df = pd.merge_asof(
+                            df.sort_values('kline_open_time'), 
+                            klines_df[['timestamp_key', 'close', 'volume']].sort_values('timestamp_key'),
+                            left_on='kline_open_time',
+                            right_on='timestamp_key',
+                            direction='nearest'
+                        )
+
+                tend, porc = analizar_tendencia_open_interest(df, periodo=limit)
+                vtend, vporc = analizar_tendencia_volumen(df, periodo=limit)
+                tendencia, fuerza, cambio_porcentual,precio_actual = calcular_tendencia_precio(df, periodo=limit, metodo='ema')
+
+                return df,tend, porc,vtend, vporc, tendencia, fuerza, cambio_porcentual,precio_actual
+            else:
+                print(f"Error al obtener datos: {response.status_code}")
+                print(response.text)
+                return None,None, None,None,None,None,None,None,None
+            
+        except Exception as e:
+            print(f"Error en la solicitud: {e}")
+            return None,None, None,None,None,None,None,None,None
+
+def analizar_tendencia_open_interest(df_oi, periodo=5):
+    """
+    Analiza la tendencia del open interest para determinar si es alcista o bajista.
+    
+    Parámetros:
+    - df_oi: DataFrame con los datos de open interest (debe contener la columna 'sumOpenInterest')
+    - periodo: Número de periodos para calcular la tendencia (por defecto 5)
+    
+    Retorna:
+    - str: 'alcista', 'bajista' o 'neutral'
+    - float: Porcentaje de cambio en el periodo analizado
+    """
+    if df_oi is None or len(df_oi) < periodo:
+        return "neutral", 0
+    
+    # Asegurarse que los datos estén ordenados por timestamp (ascendente)
+    df_sorted = df_oi.sort_values('timestamp')
+    
+    # Calcular la media móvil para suavizar la tendencia
+    df_sorted['oi_sma'] = df_sorted['sumOpenInterest'].rolling(window=min(3, len(df_sorted))).mean()
+    
+    # Llenar NaN con el primer valor válido
+    df_sorted['oi_sma'] = df_sorted['oi_sma'].fillna(df_sorted['sumOpenInterest'])
+    
+    # Obtener los valores recientes para comparar
+    recent_oi = df_sorted['oi_sma'].iloc[-periodo:].values
+    
+    # Calcular el porcentaje de cambio
+    cambio_porcentual = ((recent_oi[-1] - recent_oi[0]) / recent_oi[0]) * 100
+    
+    # Calcular pendiente de la tendencia usando regresión lineal
+    x = np.arange(len(recent_oi))
+    pendiente = np.polyfit(x, recent_oi, 1)[0]
+    
+    # Determinar la fuerza de la tendencia
+    if abs(cambio_porcentual) < 1.0:
+        return "neutral", cambio_porcentual
+    elif pendiente > 0:
+        return "alza", cambio_porcentual
+    else:
+        return "baja", cambio_porcentual
+
+
+def analizar_tendencia_volumen(df, periodo=5):
+            """
+            Analiza la tendencia del volumen para determinar si está en alza o baja.
+            
+            Parámetros:
+            - df: DataFrame con los datos de volumen (debe contener la columna 'volume')
+            - periodo: Número de periodos para calcular la tendencia (por defecto 5)
+            
+            Retorna:
+            - str: 'alza', 'baja' o 'neutral'
+            - float: Porcentaje de cambio en el periodo analizado
+            """
+            if df is None or len(df) < periodo:
+                return "neutral", 0
+            
+            # Asegurarse que los datos estén ordenados por timestamp (ascendente)
+            if 'timestamp' in df.columns:
+                df_sorted = df.sort_values('timestamp')
+            else:
+                # Si no hay columna timestamp, asumir que los datos ya están ordenados
+                df_sorted = df.copy()
+            
+            # Calcular la media móvil para suavizar la tendencia
+            df_sorted['vol_sma'] = df_sorted['volume'].rolling(window=min(3, len(df_sorted))).mean()
+            
+            # Llenar NaN con el primer valor válido
+            df_sorted['vol_sma'] = df_sorted['vol_sma'].fillna(df_sorted['volume'])
+            
+            # Obtener los valores recientes para comparar
+            recent_vol = df_sorted['vol_sma'].iloc[-periodo:].values
+            
+            # Calcular el porcentaje de cambio
+            cambio_porcentual = ((recent_vol[-1] - recent_vol[0]) / recent_vol[0]) * 100
+            
+            # Calcular pendiente de la tendencia usando regresión lineal
+            x = np.arange(len(recent_vol))
+            pendiente = np.polyfit(x, recent_vol, 1)[0]
+            
+            # Determinar la fuerza de la tendencia
+            if abs(cambio_porcentual) < 5.0:  # Los volúmenes suelen tener más variabilidad
+                return "neutral", cambio_porcentual
+            elif pendiente > 0:
+                return "alza", cambio_porcentual
+            else:
+                return "baja", cambio_porcentual
+
+
+def calcular_tendencia_precio(df, periodo=14, metodo='sma'):
+                    """
+                    Calcula la tendencia del precio basada en las medias móviles o regresión lineal.
+                    
+                    Parámetros:
+                    - df: DataFrame con la columna 'close'
+                    - periodo: Número de periodos para calcular la tendencia
+                    - metodo: 'sma' para media móvil simple, 'ema' para media móvil exponencial, 
+                              'regresion' para regresión lineal
+                    
+                    Retorna:
+                    - tendencia: 'alcista', 'bajista' o 'neutral'
+                    - fuerza: valor numérico indicando la fuerza de la tendencia
+                    - porcentaje: cambio porcentual en el periodo analizado
+                    """
+                    if len(df) < periodo:
+                        return "neutral", 0, 0
+                    
+                    # Obtener los precios de cierre
+                    close_prices = df['close'].values
+                    
+                    if metodo == 'sma':
+                        # Calcular la media móvil simple
+                        sma = talib.SMA(close_prices, timeperiod=periodo)
+                        precio_actual = close_prices[-1]
+                        sma_actual = sma[-1]
+                        sma_anterior = sma[-2]
+                        
+                        # Determinar tendencia basada en posición del precio respecto a SMA
+                        if precio_actual > sma_actual and sma_actual > sma_anterior:
+                            tendencia = "alcista"
+                        elif precio_actual < sma_actual and sma_actual < sma_anterior:
+                            tendencia = "bajista"
+                        else:
+                            tendencia = "neutral"
+                        
+                        # Calcular la fuerza como distancia del precio a la media en porcentaje
+                        fuerza = abs((precio_actual - sma_actual) / sma_actual * 100)
+                        
+                    elif metodo == 'ema':
+                        # Calcular la media móvil exponencial
+                        ema = talib.EMA(close_prices, timeperiod=periodo)
+                        precio_actual = close_prices[-1]
+                        ema_actual = ema[-1]
+                        ema_anterior = ema[-2]
+                        
+                        # Determinar tendencia basada en posición del precio respecto a EMA
+                        if precio_actual > ema_actual and ema_actual > ema_anterior:
+                            tendencia = "alcista"
+                        elif precio_actual < ema_actual and ema_actual < ema_anterior:
+                            tendencia = "bajista"
+                        else:
+                            tendencia = "neutral"
+                        
+                        # Calcular la fuerza como distancia del precio a la media en porcentaje
+                        fuerza = abs((precio_actual - ema_actual) / ema_actual * 100)
+                        
+                    elif metodo == 'regresion':
+                        # Calcular regresión lineal para determinar la pendiente
+                        x = np.arange(periodo)
+                        y = close_prices[-periodo:]
+                        pendiente, _, _, _, _ = talib.LINEARREG(close_prices, timeperiod=periodo)
+                        
+                        # Normalizar la pendiente respecto al precio promedio para hacerla comparable
+                        precio_promedio = np.mean(y)
+                        pendiente_normalizada = pendiente[-1] / precio_promedio * 100
+                        
+                        # Determinar tendencia basada en la pendiente
+                        if pendiente_normalizada > 0.1:
+                            tendencia = "alcista"
+                        elif pendiente_normalizada < -0.1:
+                            tendencia = "bajista"
+                        else:
+                            tendencia = "neutral"
+                        
+                        # La fuerza es el valor absoluto de la pendiente normalizada
+                        fuerza = abs(pendiente_normalizada)
+                    
+                    # Calcular el cambio porcentual en el periodo
+                    cambio_porcentual = ((close_prices[-1] - close_prices[-periodo]) / close_prices[-periodo]) * 100
+                    
+                    return tendencia, fuerza, cambio_porcentual,precio_actual

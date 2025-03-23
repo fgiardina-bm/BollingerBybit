@@ -6,3 +6,5 @@ output
 *.txt
 *.csv
 *.json
+csv-copy.sh
+txt-copy.sh

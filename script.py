@@ -1307,14 +1307,6 @@ def operar8(simbolos,sr):
                         logger(f"{symbol} ATR actual: {atr_actual:.5f}")
 
                         # Ajustar el importe de USDT según el ATR
-                        # Si el ATR es muy grande, reducimos la exposición para limitar el riesgo
-                        max_atr_riesgo = precio * 0.03  # Considera un 3% como ATR de referencia
-                        logger(f"{symbol} ATR máximo permitido: {max_atr_riesgo:.5f}")
-                        if atr_actual > max_atr_riesgo:
-                            # Reducir el importe proporcionalmente al exceso de ATR
-                            factor_reduccion = max_atr_riesgo / atr_actual
-                            usdt = usdt * factor_reduccion
-                            logger(f"{symbol} ATR elevado: {atr_actual:.5f}, reduciendo posición por factor: {factor_reduccion:.2f}")
 
                         # Calcular el stop loss y verificar máxima pérdida
                         stop_loss_estimado, _, _, _ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
@@ -1376,14 +1368,6 @@ def operar8(simbolos,sr):
                         logger(f"{symbol} ATR actual: {atr_actual:.5f}")
 
                         # Ajustar el importe de USDT según el ATR
-                        # Si el ATR es muy grande, reducimos la exposición para limitar el riesgo
-                        max_atr_riesgo = precio * 0.03  # Considera un 1% como ATR de referencia
-                        logger(f"{symbol} ATR máximo permitido: {max_atr_riesgo:.5f}")
-                        if atr_actual > max_atr_riesgo:
-                            # Reducir el importe proporcionalmente al exceso de ATR
-                            factor_reduccion = max_atr_riesgo / atr_actual
-                            usdt = usdt * factor_reduccion
-                            logger(f"{symbol} ATR elevado: {atr_actual:.5f}, reduciendo posición por factor: {factor_reduccion:.2f}")
 
 
                         # Calcular el stop loss y verificar máxima pérdida

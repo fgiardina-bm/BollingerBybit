@@ -1247,7 +1247,7 @@ def operar8(simbolos,sr):
 
                     if abs(fundingRate) > 0.0015:  # 0.1% as decimal
                         logger(f"{symbol} Funding rate demasiado alto: {(fundingRate*100):.4f}, saltando")
-                        time.sleep(random.randint(sleep_rand_from*2, sleep_rand_to*2))
+                        time.sleep(random.randint(sleep_rand_from*8, sleep_rand_to*8))
                         continue
 
                     if bucle_cnt >= random.randint(30, 80):
@@ -1536,7 +1536,7 @@ def operar9(simbolos):
 
                     if abs(fundingRate) > 0.0015:  # 0.1% as decimal
                         logger(f"{symbol} Funding rate demasiado alto: {(fundingRate*100):.4f}, saltando")
-                        time.sleep(random.randint(sleep_rand_from*2, sleep_rand_to*2))
+                        time.sleep(random.randint(sleep_rand_from*8, sleep_rand_to*8))
                         continue
 
     
@@ -1811,7 +1811,7 @@ def operar10(simbolos,sr): # nuevo calculo soporte y resistencia
 
                     if abs(fundingRate) > 0.0015:  # 0.1% as decimal
                         logger(f"{symbol} Funding rate demasiado alto: {(fundingRate*100):.4f}, saltando")
-                        time.sleep(random.randint(sleep_rand_from*2, sleep_rand_to*2))
+                        time.sleep(random.randint(sleep_rand_from*8, sleep_rand_to*8))
                         continue
 
                     if bucle_cnt >= random.randint(30, 80):

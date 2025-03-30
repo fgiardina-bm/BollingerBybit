@@ -2012,12 +2012,21 @@ def operar0(simbolos): # nuevo calculo soporte y resistencia
     while True:
          for symbol in simbolos:
             # analizar_reversion_tendencia(symbol, timeframe=timeframe)
-            result, tendencia, proc, vtend, vporc,  ptendencia, pfuerza, pcambio_porcentual, pprecio_actual= get_open_interest_binance(symbol, "5m", 6)
+            result, tendencia, proc, vtend, vporc,  ptendencia, pfuerza, pcambio_porcentual, pprecio_actual, oi_value,vol_value= get_open_interest_binance(symbol, "5m", 6)
             # print(result)
-            print(f"{symbol:<15}\t{tendencia}\t{proc:.2f}%\t{vtend}\t{vporc:.2f}%\tptendencia: {ptendencia}\tpfuerza: {pfuerza:.2f}%\tpcambio_porcentual: {pcambio_porcentual:.2f}%\tprecio: {pprecio_actual:.5f}")
-            logger(f"{symbol:<15}\t{tendencia}\t{proc:.2f}%\t{vtend}\t{vporc:.2f}%\tptendencia: {ptendencia}\tpfuerza: {pfuerza:.2f}%\tpcambio_porcentual: {pcambio_porcentual:.2f}%\tprecio: {pprecio_actual:.5f}")
-            t_logger(f"{symbol};{tendencia};{proc:.2f};{vtend};{vporc:.2f};{ptendencia};{pfuerza:.2f};{pcambio_porcentual:.2f};{pprecio_actual:.5f}")
+            # symbol,io_tendencia,io_porcentaje,volumen_tendencia,volumen_porcentaje,precio_tendencia,precio_fuerza_porcentaje,precio_cambio_porcentaje,pprecio_actual
+            print(f"{symbol:<15}\t{pprecio_actual}\t{oi_value}\t{vol_value}")
+            logger(f"{symbol:<15}\t{pprecio_actual}\t{oi_value}%\t{vol_value}")
+            t_logger(f"{symbol};{pprecio_actual};{oi_value};{vol_value}")
          time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+
+    # while True:
+    #      for symbol in simbolos:
+    #         df = get_oi(symbol, "1h", 6)
+    #         io_sube = check_rising_oi(df,symbol,5)
+    #         print(f"{symbol:<15}\tIO sube: {io_sube}")
+    #         logger(f"{symbol} IO sube: {io_sube}")
+    #      time.sleep(random.randint(sleep_rand_from*5, sleep_rand_to*5))
 
 def get_syr(symbol):
     global soportes_resistencias
@@ -2134,8 +2143,8 @@ if strategy == 0: # pruebas
     # otros_simbolos = ['AUCTIONUSDT']
     for simbolo in otros_simbolos:
         try:
-            time.sleep(1)
             hilo = threading.Thread(target=operar0, args=([simbolo],)) 
             hilo.start()
+            time.sleep(1)
         except Exception as e:
             logger(f"Error en strategy {simbolo}: {e}")

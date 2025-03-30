@@ -606,7 +606,7 @@ def detectar_reversion_alcista(df, soportes, top_rsi, bottom_rsi):
     sma_200 = talib.SMA(df['close'], timeperiod=200)
 
     # Confirmar volumen alto
-    avg_volume = df['volume'].rolling(window=20).mean()
+    avg_volume = df['volume'].rolling(window=5).mean()
     volumen_alto = df['volume'] > avg_volume
 
     # Calcular ADX para confirmar fuerza de tendencia
@@ -683,7 +683,7 @@ def detectar_reversion_bajista(df, resistencias, top_rsi, bottom_rsi):
     sma_200 = talib.SMA(df['close'], timeperiod=200)
 
     # Confirmar volumen alto
-    avg_volume = df['volume'].rolling(window=20).mean()
+    avg_volume = df['volume'].rolling(window=5).mean()
     volumen_alto = df['volume'] > avg_volume
 
     # Calcular ADX para confirmar fuerza de tendencia
@@ -1093,19 +1093,19 @@ def get_open_interest_binance(symbol="BTCUSDT", interval="5m", limit=6):
                             direction='nearest'
                         )
 
-                tend, porc = analizar_tendencia_open_interest(df, periodo=limit)
-                vtend, vporc = analizar_tendencia_volumen(df, periodo=limit)
+                tend, porc,oi_value = analizar_tendencia_open_interest(df, periodo=limit)
+                vtend, vporc, vol_value = analizar_tendencia_volumen(df, periodo=limit)
                 tendencia, fuerza, cambio_porcentual,precio_actual = calcular_tendencia_precio(df, periodo=limit, metodo='ema')
 
-                return df,tend, porc,vtend, vporc, tendencia, fuerza, cambio_porcentual,precio_actual
+                return df,tend, porc,vtend, vporc, tendencia, fuerza, cambio_porcentual,precio_actual,oi_value,vol_value
             else:
                 print(f"Error al obtener datos: {response.status_code}")
                 print(response.text)
-                return None,None, None,None,None,None,None,None,None
+                return None,None, None,None,None,None,None,None,None,None,None
             
         except Exception as e:
             print(f"Error en la solicitud: {e}")
-            return None,None, None,None,None,None,None,None,None
+            return None,None, None,None,None,None,None,None,None,None,None
 
 def analizar_tendencia_open_interest(df_oi, periodo=5):
     """
@@ -1143,11 +1143,11 @@ def analizar_tendencia_open_interest(df_oi, periodo=5):
     
     # Determinar la fuerza de la tendencia
     if abs(cambio_porcentual) < 1.0:
-        return "neutral", cambio_porcentual
+        return "neutral", cambio_porcentual, recent_oi[0]
     elif pendiente > 0:
-        return "alza", cambio_porcentual
+        return "alza", cambio_porcentual, recent_oi[0]
     else:
-        return "baja", cambio_porcentual
+        return "baja", cambio_porcentual, recent_oi[0]
 
 
 def analizar_tendencia_volumen(df, periodo=5):
@@ -1190,11 +1190,11 @@ def analizar_tendencia_volumen(df, periodo=5):
             
             # Determinar la fuerza de la tendencia
             if abs(cambio_porcentual) < 5.0:  # Los volúmenes suelen tener más variabilidad
-                return "neutral", cambio_porcentual
+                return "neutral", cambio_porcentual,recent_vol[0]
             elif pendiente > 0:
-                return "alza", cambio_porcentual
+                return "alza", cambio_porcentual,recent_vol[0]
             else:
-                return "baja", cambio_porcentual
+                return "baja", cambio_porcentual,recent_vol[0]
 
 
 def calcular_tendencia_precio(df, periodo=14, metodo='sma'):
@@ -1279,3 +1279,67 @@ def calcular_tendencia_precio(df, periodo=14, metodo='sma'):
                     cambio_porcentual = ((close_prices[-1] - close_prices[-periodo]) / close_prices[-periodo]) * 100
                     
                     return tendencia, fuerza, cambio_porcentual,precio_actual
+
+
+def get_oi(symbol="BTCUSDT", interval="5m", limit=6):
+    """
+    Obtiene el Open Interest de un símbolo en Binance para las últimas N velas en un intervalo específico.
+    
+    Parámetros:
+    - symbol (str): Par de trading, por defecto "BTCUSDT"
+    - interval (str): Intervalo de tiempo, por defecto "5m"
+    - limit (int): Número de velas a obtener, por defecto 20
+    
+    Retorna:
+    - pandas.DataFrame: DataFrame con el Open Interest y su timestamp
+    """
+    try:
+        # Endpoint para obtener el Open Interest de Binance
+        url = f"https://fapi.binance.com/futures/data/openInterestHist"
+        
+        # Obtener Open Interest histórico
+        params = {
+            "symbol": symbol,
+            "period": interval,
+            "limit": limit
+        }
+        
+        response = requests.get(url, params=params)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Convertir a DataFrame
+            df = pd.DataFrame(data)
+            
+            # Convertir campos a tipos apropiados
+            df['open_interest'] = df['sumOpenInterestValue'].astype(float)
+            
+            return df
+        else:
+            print(f"{symbol} Error al obtener datos: {response.status_code}")
+            print(response.text)
+            return None
+        
+    except Exception as e:
+        print(f"{symbol} Error en la solicitud: {e}")
+        return None
+
+def check_rising_oi(df, symbol, periods=5):
+    """
+    Verifica si el Open Interest ha subido en los últimos 'periods' registros.
+    """
+    if df is None or len(df) < periods:
+        return False
+
+    df_symbol = df.copy()
+    df_symbol["oi_change"] = df_symbol["open_interest"].diff()
+    
+    # Filtrar últimos 'periods' registros
+    last_changes = df_symbol["oi_change"].iloc[-periods:]
+    
+    # Si todas las diferencias son positivas, enviar alerta
+    if all(last_changes > 0):
+        print(f"🔔 Alerta: Open Interest de {symbol} ha subido en los últimos {periods} períodos consecutivos.")
+        return True
+    return False

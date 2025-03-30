@@ -1100,7 +1100,105 @@ def get_soportes_resistencia(symbol, frame1="240", frame2="D", frame3="W", limit
 
     return soportes_cercanos, resistencias_cercanas, valor_actual, soportes_todas, resistencias_todas,niveles_finales
 
-
+def get_soportes_resistencia_fuertes(symbol, frame1="240", frame2="D", frame3="W", 
+                               limit1=200, limit2=100, limit3=50, 
+                               tolerancia=0.005, min_coincidencias=2) -> Tuple[np.ndarray, np.ndarray, float, np.ndarray, np.ndarray]:
+    """
+    Obtiene soportes y resistencias fuertes que coinciden en múltiples timeframes.
+    
+    Args:
+        symbol: Símbolo a analizar
+        frame1, frame2, frame3: Timeframes a considerar
+        limit1, limit2, limit3: Número de velas a obtener para cada timeframe
+        tolerancia: Tolerancia para considerar que dos niveles son similares
+        min_coincidencias: Mínimo número de timeframes donde debe aparecer un nivel (2 o 3)
+        
+    Returns:
+        Soportes cercanos, resistencias cercanas, precio actual, todos los soportes, todas las resistencias
+    """
+    # Obtener datos para cada timeframe
+    data1 = obtener_datos_historicos(symbol, frame1, limit1)
+    if data1 is None or len(data1[4]) == 0:
+        raise ValueError(f"No se pudieron obtener datos para {symbol} en timeframe {frame1}")
+    i1 = np.array(data1[4])  # Precios de cierre
+    
+    data2 = obtener_datos_historicos(symbol, frame2, limit2)
+    if data2 is None or len(data2[4]) == 0:
+        raise ValueError(f"No se pudieron obtener datos para {symbol} en timeframe {frame2}")
+    i2 = np.array(data2[4])  # Precios de cierre
+    
+    data3 = obtener_datos_historicos(symbol, frame3, limit3)
+    if data3 is None or len(data3[4]) == 0:
+        raise ValueError(f"No se pudieron obtener datos para {symbol} en timeframe {frame3}")
+    i3 = np.array(data3[4])  # Precios de cierre
+    
+    # Calcular niveles independientes para cada timeframe
+    niveles_1 = calcular_niveles(i1)
+    niveles_2 = calcular_niveles(i2)
+    niveles_3 = calcular_niveles(i3)
+    
+    # Crear un diccionario para rastrear las coincidencias
+    niveles_coincidentes = {}
+    
+    # Función para verificar si un nivel coincide con otro dentro de la tolerancia
+    def es_coincidente(nivel, lista_niveles, tolerancia_rel):
+        for n in lista_niveles:
+            if abs(nivel - n) < nivel * tolerancia_rel:
+                return True, n
+        return False, None
+    
+    # Verificar coincidencias entre timeframes
+    for nivel in niveles_1:
+        coincide_tf2, nivel_tf2 = es_coincidente(nivel, niveles_2, tolerancia)
+        coincide_tf3, nivel_tf3 = es_coincidente(nivel, niveles_3, tolerancia)
+        
+        puntuacion = 1  # Siempre cuenta el timeframe actual
+        if coincide_tf2: puntuacion += 1
+        if coincide_tf3: puntuacion += 1
+        
+        # Obtener el nivel promedio de las coincidencias
+        if puntuacion > 1:
+            niveles_coincidentes[nivel] = {
+                'puntuacion': puntuacion,
+                'valor': nivel  # Usamos el nivel original por simplicidad
+            }
+    
+    # Verificar si hay niveles en TF2 que no coinciden con TF1 pero sí con TF3
+    for nivel in niveles_2:
+        if not any(abs(nivel - n) < nivel * tolerancia for n in niveles_1):
+            coincide_tf3, nivel_tf3 = es_coincidente(nivel, niveles_3, tolerancia)
+            
+            if coincide_tf3:
+                niveles_coincidentes[nivel] = {
+                    'puntuacion': 2,  # TF2 + TF3
+                    'valor': nivel
+                }
+    
+    # Filtrar solo los niveles que aparecen en al menos min_coincidencias timeframes
+    niveles_filtrados = [info['valor'] for nivel, info in niveles_coincidentes.items() 
+                        if info['puntuacion'] >= min_coincidencias]
+    
+    # Si no hay niveles con suficientes coincidencias, relajar el criterio
+    if not niveles_filtrados and min_coincidencias > 1:
+        logger(f"{symbol:<15}\tNo se encontraron niveles coincidentes en {min_coincidencias} timeframes. Probando con coincidencias = 1")
+        # Usar todos los niveles consolidados como respaldo
+        niveles_filtrados = consolidar_niveles(niveles_1, niveles_2, niveles_3, tolerancia)
+    
+    niveles_finales = np.array(sorted(niveles_filtrados))
+    valor_actual = obtener_precio_actual(symbol)
+    
+    # Clasificar los niveles según el precio actual
+    soportes_todas = niveles_finales[niveles_finales < valor_actual]
+    resistencias_todas = niveles_finales[niveles_finales > valor_actual]
+    
+    # Obtener los niveles más cercanos
+    soportes_cercanos, resistencias_cercanas = encontrar_niveles_cercanos(niveles_finales, valor_actual)
+    
+    # Registrar información sobre los niveles fuertes
+    logger(f"Niveles fuertes para {symbol}: {len(niveles_finales)} encontrados")
+    logger(f"Soportes fuertes: {len(soportes_todas)}, Resistencias fuertes: {len(resistencias_todas)}")
+    
+    return soportes_cercanos, resistencias_cercanas, valor_actual, soportes_todas, resistencias_todas, niveles_finales
 
 def obtener_orderbook_binance(symbol: str, limite: int = 1000):
     """

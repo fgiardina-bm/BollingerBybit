@@ -1245,9 +1245,9 @@ def operar8(simbolos,sr):
                     precio = float(ticker['result']['list'][0]['lastPrice'])
                     fundingRate = float(ticker['result']['list'][0]['fundingRate'])
 
-                    if abs(fundingRate) > 0.0015:  # 0.1% as decimal
+                    if abs(fundingRate) > 0.0015:  # 0.15% as decimal
                         logger(f"{symbol} Funding rate demasiado alto: {(fundingRate*100):.4f}, saltando")
-                        time.sleep(random.randint(sleep_rand_from*8, sleep_rand_to*8))
+                        time.sleep(random.randint(sleep_rand_from*60, sleep_rand_to*60))
                         continue
 
                     if bucle_cnt >= random.randint(30, 80):

@@ -2197,7 +2197,8 @@ def get_syr_n(symbol):
 
 
 # Lista de otros símbolos a buscar
-otros_simbolos = obtener_simbolos_mayor_volumen_binance(cnt_symbols)
+# otros_simbolos = obtener_simbolos_mayor_volumen_binance(cnt_symbols)
+otros_simbolos = obtener_simbolos_mayor_volumen(cnt_symbols)
 
 
 if strategy == 1:

@@ -69,7 +69,7 @@ detectar_incluir_emas = int(os.getenv("DETECTAR_INCLUIR_EMAS", 1))
 detectar_incluir_adx = int(os.getenv("DETECTAR_INCLUIR_ADX", 1))    
 
 sl_callback_progresive = float(os.getenv("SL_CALLBACK_PROGRESIVE", 0.7))
-symbols_from = float(os.getenv("SYMBOLS_FROM", 'binance'))
+symbols_from = os.getenv("SYMBOLS_FROM", 'binance')
 
 config_lock = threading.Lock()
 
@@ -149,7 +149,7 @@ def reload_config():
         detectar_incluir_adx = int(os.getenv("DETECTAR_INCLUIR_ADX", 1))   
 
         sl_callback_progresive = float(os.getenv("SL_CALLBACK_PROGRESIVE", 0.7))
-        symbols_from = float(os.getenv("SYMBOLS_FROM", 'binance'))
+        symbols_from = os.getenv("SYMBOLS_FROM", 'binance')
 
         soportes_resistencias = {}
 

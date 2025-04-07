@@ -1413,3 +1413,141 @@ def analizar_reversion_tendencia(symbol, timeframe="240"):
     except Exception as e:
         # logger(f"Error al analizar reversión para {symbol}: {e}")
         return None
+
+
+
+
+def get_oi_klines_binance(symbol="BTCUSDT", interval="5m", limit=6):
+        """
+        Obtiene el Open Interest de un símbolo en Binance para las últimas N velas en un intervalo específico.
+        
+        Parámetros:
+        - symbol (str): Par de trading, por defecto "BTCUSDT"
+        - interval (str): Intervalo de tiempo, por defecto "5m"
+        - limit (int): Número de velas a obtener, por defecto 20
+        
+        Retorna:
+        - pandas.DataFrame: DataFrame con el Open Interest y su timestamp
+        """
+        try:
+            
+            # Endpoint para obtener el Open Interest de Binance
+            url = f"https://fapi.binance.com/fapi/v1/openInterest"
+            
+            # Obtener Open Interest histórico
+            historical_url = f"https://fapi.binance.com/futures/data/openInterestHist"
+            params = {
+                "symbol": symbol,
+                "period": interval,
+                "limit": limit
+            }
+            
+            response = requests.get(historical_url, params=params)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Convertir a DataFrame
+                df = pd.DataFrame(data)
+                
+                # Convertir campos a tipos apropiados
+                df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+                df['open_interest'] = df['sumOpenInterest'].astype(float)
+                df['open_interest_value'] = df['sumOpenInterestValue'].astype(float)
+
+                # Añadir datos de precio al DataFrame de Open Interest
+                if 'timestamp' in df.columns:
+                    # Endpoint para obtener datos OHLCV
+                    klines_url = f"https://fapi.binance.com/fapi/v1/klines"
+                    klines_params = {
+                        "symbol": symbol,
+                        "interval": interval,
+                        "limit": limit
+                    }
+                    
+                    klines_response = requests.get(klines_url, params=klines_params)
+                    
+                    if klines_response.status_code == 200:
+                        klines_data = klines_response.json()
+                        
+                        # Crear DataFrame con datos OHLCV
+                        klines_df = pd.DataFrame(klines_data, columns=[
+                            'kline_open_time', 'open', 'high', 'low', 'close', 'volume',
+                            'kline_close_time', 'quote_asset_volume', 'number_of_trades',
+                            'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'
+                        ])
+                        
+                        # Convertir a tipos apropiados
+                        klines_df['kline_open_time'] = pd.to_datetime(klines_df['kline_open_time'], unit='ms')
+                        klines_df['open'] = klines_df['open'].astype(float)
+                        klines_df['high'] = klines_df['high'].astype(float)
+                        klines_df['low'] = klines_df['low'].astype(float)
+                        klines_df['close'] = klines_df['close'].astype(float)
+                        klines_df['volume'] = klines_df['volume'].astype(float)
+                        
+                        # Alinear timestamps entre OI y OHLCV (aproximadamente)
+                        df['kline_open_time'] = df['timestamp'].dt.floor('5min')
+                        klines_df['timestamp_key'] = klines_df['kline_open_time']
+                        
+                        # Combinar DataFrames
+                        df = pd.merge_asof(
+                            df.sort_values('kline_open_time'), 
+                            klines_df[['timestamp_key', 'open', 'close', 'volume']].sort_values('timestamp_key'),
+                            left_on='kline_open_time',
+                            right_on='timestamp_key',
+                            direction='nearest'
+                        )
+
+
+                return df
+            else:
+                # print(f"Error al obtener datos: {response.status_code}")
+                # print(response.text)
+                return None
+        except Exception as e:
+            # print(f"Error en la solicitud: {e}")
+            return None
+
+def detectar_tendencia_fuerte(symbol, df, umbral = 0.01):
+    """
+    df: DataFrame con las últimas 5 velas. Debe tener columnas: 'precio', 'open_interest', 'volumen'
+    Retorna: 'alcista fuerte', 'bajista fuerte' o 'nada'
+    """
+
+    if df is None or len(df) == 0:
+        return "sin datos"
+
+    if len(df) < 2:
+        return "insuficientes datos"
+
+    df = df.copy()
+
+    df[['close', 'open_interest', 'volume']] = df[['close', 'open_interest', 'volume']].astype(float)
+    # print(df[['timestamp','close', 'open_interest', 'volume']])
+    cambios = df[['close', 'open_interest', 'volume']].pct_change().dropna()
+
+    cambios['suma_close'] = cambios['close'].cumsum()
+    cambios['suma_open_interest'] = cambios['open_interest'].cumsum()
+    cambios['suma_volume'] = cambios['volume'].cumsum()
+
+    ultimos_cambios = cambios.iloc[-1]
+
+    precio_sube = ultimos_cambios['suma_close'] > umbral
+    oi_sube = ultimos_cambios['suma_open_interest'] >umbral
+    vol_sube = ultimos_cambios['suma_volume'] > umbral
+
+    precio_baja = ultimos_cambios['suma_close'] < umbral*(-1.0)
+    oi_baja = ultimos_cambios['suma_open_interest'] < umbral*(-1.0)
+    vol_baja = ultimos_cambios['suma_volume'] < umbral*(-1.0)
+    diff_open_close = df['open'].iloc[-1] - df['close'].iloc[-1]
+
+    # print(f"Precio: PS: {precio_sube}, OIS: {oi_sube}, PB: {precio_baja}, OIB: {oi_baja},")
+    print(f"{symbol:<15}\tUltimos cambios: {ultimos_cambios['suma_close']:<5.5f}\t{ultimos_cambios['suma_open_interest']:<5.5f}\t\t{diff_open_close:<5.4f}")
+    # \t{df['open'].iloc[-1].astype(float) - df['close'].iloc[-1].astype(float)}
+    
+    if precio_sube and oi_sube and diff_open_close < 0:
+        return "alcista"
+    elif precio_baja and oi_sube and diff_open_close > 0:
+        return "bajista"
+    else:
+        return "nada"

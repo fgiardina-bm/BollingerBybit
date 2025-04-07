@@ -1996,6 +1996,142 @@ def operar10(simbolos,sr): # nuevo calculo soporte y resistencia
          time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
 
 
+def operar11(simbolos):
+    global opened_positions, opened_positions_short, opened_positions_long
+    global saldo_usdt_inicial
+    global api_key, api_secret, timeframe, tp_porcent, sl_porcent, cnt_symbols
+    global account_percentage, top_rsi, bottom_rsi, sleep_rand_from, sleep_rand_to
+    global sl_callback_percentage, verify_rsi, Bollinger_bands_width, monitoring, max_ops
+    global opened_positions_long, opened_positions_short
+    global max_ops_long, max_ops_short, sr_fib_tolerancia, sr_fib_velas,account_usdt_limit, order_book_limit, order_book_delay_divisor
+    global sl_multiplicador, tp_multiplicador
+    global sl_percentaje_account
+
+    logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
+
+    bucle_cnt = 0
+    while True:
+         bucle_cnt += 1 
+         for symbol in simbolos:
+            try:
+                posiciones = get_opened_positions(symbol=symbol)
+                if float(posiciones['result']['list'][0]['size']) != 0:
+
+                    if symbol not in opened_positions:
+                        opened_positions.append(symbol)
+
+                    logger("Hay una posicion abierta en " + symbol)
+                    time.sleep(60)
+                else:
+
+                    if symbol in opened_positions:
+                        opened_positions.remove(symbol)
+
+                    if len(opened_positions) >= max_ops:
+                        logger(f"Se alcanzó el límite de posiciones abiertas | {max_ops}.")
+                        time.sleep(60)
+                        continue
+
+                    if bucle_cnt < 2:
+                        logger(f"{symbol} no OPERAR aun | {bucle_cnt}.")
+                        time.sleep(20)
+                        continue
+
+
+
+                    df = get_oi_klines_binance(symbol, "5m", 3)
+                    result = detectar_tendencia_fuerte(symbol, df, 0.002)
+
+
+                    log_message = f"{symbol:<18} result: {result}"
+                    logger(log_message)
+                
+                        
+                    if result == 'bajista':
+
+                        if len(opened_positions_short) >= max_ops_short:
+                            logger(f"{symbol:<18} operaciones abiertas en short {len(opened_positions_short)} | maximo configurado es {max_ops_short}.")
+                            time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                            continue
+
+                        # Datos de la moneda precio y pasos.
+                        step = client.get_instruments_info(category="linear", symbol=symbol)
+                        precision_step = float(step['result']['list'][0]["lotSizeFilter"]["qtyStep"])
+
+                        ticker = client.get_tickers(category='linear', symbol=symbol)
+                        precio = float(ticker['result']['list'][0]['lastPrice'])
+
+                        saldo_usdt = obtener_saldo_usdt()
+                        usdt = saldo_usdt * (account_percentage / 100)
+                        if saldo_usdt < account_usdt_limit:
+                            time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                            continue
+
+
+                        if usdt < 5:
+                            logger(f"{symbol} Posición insuficiente para operar usdt: {usdt}")
+                            continue
+                        
+                        precision = precision_step
+                        qty = usdt / precio
+                        qty = qty_precision(qty, precision)
+                        if qty.is_integer():
+                            qty = int(qty)
+                        logger(f"{symbol} Cantidad de monedas a vender: " + str(qty))
+
+                        stop_loss_price = precio * (1 + sl_porcent / 100)
+                        take_profit_price = precio * (1 - tp_porcent / 100)
+
+                        crear_orden_con_stoploss_takeprofit(symbol, "Sell", "Market", qty,stop_loss_price,take_profit_price)
+                       
+
+                    if result == 'alcista':
+
+                        if len(opened_positions_long) >= max_ops_long:
+                            logger(f"{symbol:<18} operaciones abiertas en long {len(opened_positions_long)} | maximo configurado es {max_ops_long}.")
+                            time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                            continue
+
+                        # Datos de la moneda precio y pasos.
+                        step = client.get_instruments_info(category="linear", symbol=symbol)
+                        precision_step = float(step['result']['list'][0]["lotSizeFilter"]["qtyStep"])
+
+                        ticker = client.get_tickers(category='linear', symbol=symbol)
+                        precio = float(ticker['result']['list'][0]['lastPrice'])
+                        
+                        saldo_usdt = obtener_saldo_usdt()
+                        usdt = saldo_usdt * (account_percentage / 100)
+
+                        if saldo_usdt < account_usdt_limit:
+                            continue
+
+                        if usdt < 5:
+                            logger(f"{symbol} Posición insuficiente para operar usdt: {usdt}")
+                            continue
+
+                        precision = precision_step
+                        qty = usdt / precio
+                        qty = qty_precision(qty, precision)
+                        if qty.is_integer():
+                            qty = int(qty)
+
+
+                        stop_loss_price = precio * (1 - sl_porcent / 100)
+                        take_profit_price = precio * (1 + tp_porcent / 100)
+                        
+                        crear_orden_con_stoploss_takeprofit(symbol, "Buy", "Market", qty,stop_loss_price,take_profit_price)
+
+                      
+
+            except Exception as e:
+                print(e)
+                logger(f"Error en el bot {symbol}: {e}")
+                time.sleep(60)
+
+         time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+
+
+
 def operar0(simbolos): # nuevo calculo soporte y resistencia
     global opened_positions, opened_positions_short, opened_positions_long
     global saldo_usdt_inicial
@@ -2027,6 +2163,15 @@ def operar0(simbolos): # nuevo calculo soporte y resistencia
     #         print(f"{symbol:<15}\tIO sube: {io_sube}")
     #         logger(f"{symbol} IO sube: {io_sube}")
     #      time.sleep(random.randint(sleep_rand_from*5, sleep_rand_to*5))
+
+    # while True:
+    #      for symbol in simbolos:
+    #         df = get_oi_klines_binance(symbol, "5m", 3)
+    #         result = detectar_tendencia_fuerte(symbol, df, 0.002)
+    #         print(f"{symbol:<15} {result}")
+    #      time.sleep(random.randint(sleep_rand_from*5, sleep_rand_to*5))
+
+
 
 def get_syr(symbol):
     global soportes_resistencias
@@ -2136,6 +2281,17 @@ if strategy == 10: # ema
         except Exception as e:
             logger(f"Error en get_syr_n {simbolo}: {e}")
 
+
+if strategy == 11: # pruebas
+    hilos = []
+    # otros_simbolos = ['AUCTIONUSDT']
+    for simbolo in otros_simbolos:
+        try:
+            hilo = threading.Thread(target=operar11, args=([simbolo],)) 
+            hilo.start()
+            time.sleep(1)
+        except Exception as e:
+            logger(f"Error en strategy {simbolo}: {e}")
 
 
 if strategy == 0: # pruebas

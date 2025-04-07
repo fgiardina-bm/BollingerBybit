@@ -69,7 +69,7 @@ detectar_incluir_emas = int(os.getenv("DETECTAR_INCLUIR_EMAS", 1))
 detectar_incluir_adx = int(os.getenv("DETECTAR_INCLUIR_ADX", 1))    
 
 sl_callback_progresive = float(os.getenv("SL_CALLBACK_PROGRESIVE", 0.7))
-
+symbols_from = float(os.getenv("SYMBOLS_FROM", 'binance'))
 
 config_lock = threading.Lock()
 
@@ -90,7 +90,7 @@ def reload_config():
     global soportes_resistencias, order_book_limit, order_book_delay_divisor, black_list_symbols, sl_multiplicador, tp_multiplicador
     global sl_percentaje_account
     global detectar_incluir_bbands, detectar_incluir_rsi, detectar_incluir_sr, detectar_incluir_patron_velas, detectar_incluir_volume, detectar_incluir_emas, detectar_incluir_adx
-    global sl_callback_progresive
+    global sl_callback_progresive, symbols_from
 
     config_path = ".env"
 
@@ -149,6 +149,7 @@ def reload_config():
         detectar_incluir_adx = int(os.getenv("DETECTAR_INCLUIR_ADX", 1))   
 
         sl_callback_progresive = float(os.getenv("SL_CALLBACK_PROGRESIVE", 0.7))
+        symbols_from = float(os.getenv("SYMBOLS_FROM", 'binance'))
 
         soportes_resistencias = {}
 

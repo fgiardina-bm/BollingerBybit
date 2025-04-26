@@ -1545,9 +1545,9 @@ def detectar_tendencia_fuerte(symbol, df, umbral = 0.01):
     print(f"{symbol:<15}\tUltimos cambios: {ultimos_cambios['suma_close']:<5.5f}\t{ultimos_cambios['suma_open_interest']:<5.5f}\t\t{diff_open_close:<5.4f}")
     # \t{df['open'].iloc[-1].astype(float) - df['close'].iloc[-1].astype(float)}
     
-    if precio_sube and oi_sube and diff_open_close < 0:
+    if precio_sube and oi_sube and vol_sube and diff_open_close < 0:
         return "alcista"
-    elif precio_baja and oi_sube and diff_open_close > 0:
+    elif precio_baja and oi_sube and vol_sube and diff_open_close > 0:
         return "bajista"
     else:
         return "nada"

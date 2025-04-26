@@ -1283,6 +1283,11 @@ def operar8(simbolos,sr):
                     log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tb:{signal_short.iloc[-1]}\ta:{signal_long.iloc[-1]}\tff: {(fundingRate*100):.4f}\tsupport: {min_distance_percent:.2f}%\tresistance: {min_resistance_distance:.2f}%\t8"
                     logger(log_message)
                 
+                   # si la diferencia absoluta entre min_distance_percent y min_resistance_distance es menor a 5 no operar
+                    if abs(min_distance_percent - min_resistance_distance) < 5:
+                        logger(f"{symbol} diferencia entre soporte y resistencia menor a 5% no operar")
+                        time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                        continue
                         
                     if signal_short.iloc[-1] == 1:
 
@@ -2145,16 +2150,16 @@ def operar0(simbolos): # nuevo calculo soporte y resistencia
 
 
 
-    while True:
-         for symbol in simbolos:
-            # analizar_reversion_tendencia(symbol, timeframe=timeframe)
-            result, tendencia, proc, vtend, vporc,  ptendencia, pfuerza, pcambio_porcentual, pprecio_actual, oi_value,vol_value= get_open_interest_binance(symbol, "5m", 6)
-            # print(result)
-            # symbol,io_tendencia,io_porcentaje,volumen_tendencia,volumen_porcentaje,precio_tendencia,precio_fuerza_porcentaje,precio_cambio_porcentaje,pprecio_actual
-            print(f"{symbol:<15}\t{pprecio_actual}\t{oi_value}\t{vol_value}")
-            logger(f"{symbol:<15}\t{pprecio_actual}\t{oi_value}%\t{vol_value}")
-            t_logger(f"{symbol};{pprecio_actual};{oi_value};{vol_value}")
-         time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+    # while True:
+    #      for symbol in simbolos:
+    #         # analizar_reversion_tendencia(symbol, timeframe=timeframe)
+    #         result, tendencia, proc, vtend, vporc,  ptendencia, pfuerza, pcambio_porcentual, pprecio_actual, oi_value,vol_value= get_open_interest_binance(symbol, "5m", 6)
+    #         # print(result)
+    #         # symbol,io_tendencia,io_porcentaje,volumen_tendencia,volumen_porcentaje,precio_tendencia,precio_fuerza_porcentaje,precio_cambio_porcentaje,pprecio_actual
+    #         print(f"{symbol:<15}\t{pprecio_actual}\t{oi_value}\t{vol_value}")
+    #         logger(f"{symbol:<15}\t{pprecio_actual}\t{oi_value}%\t{vol_value}")
+    #         t_logger(f"{symbol};{pprecio_actual};{oi_value};{vol_value}")
+    #      time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
 
     # while True:
     #      for symbol in simbolos:
@@ -2172,6 +2177,16 @@ def operar0(simbolos): # nuevo calculo soporte y resistencia
     #      time.sleep(random.randint(sleep_rand_from*5, sleep_rand_to*5))
 
 
+
+
+    while True:
+         for symbol in simbolos:
+            result, h,l= get_variacion_open_interest_binance(symbol, "5m", 6)
+          
+            print(f"{symbol:<15}\t{result:.2f}\t{h/1_000_000:.2f}M\t{l/1_000_000:.2f}M")
+            logger(f"{symbol:<15}\t{result:.2f}")
+            t_logger(f"{symbol};{result:.2f}")
+         time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
 
 def get_syr(symbol):
     global soportes_resistencias

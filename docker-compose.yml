@@ -1,6 +1,6 @@
 services:
   bbpy:
-    image: bot-bollinger-bybit
+    image: fgiardina/bbpy:latest
     container_name: bbpy
     restart: always
     # stdin_open: true

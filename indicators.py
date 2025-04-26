@@ -1107,6 +1107,39 @@ def get_open_interest_binance(symbol="BTCUSDT", interval="5m", limit=6):
             print(f"Error en la solicitud: {e}")
             return None,None, None,None,None,None,None,None,None,None,None
 
+
+def analizar_viariacion_open_interest(df_oi, periodo=5):
+    """
+    Analiza la tendencia del open interest para determinar si es alcista o bajista.
+    
+    Parámetros:
+    - df_oi: DataFrame con los datos de open interest (debe contener la columna 'sumOpenInterest')
+    - periodo: Número de periodos para calcular la tendencia (por defecto 5)
+    
+    Retorna:
+    - str: 'alcista', 'bajista' o 'neutral'
+    - float: Porcentaje de cambio en el periodo analizado
+    """
+    if df_oi is None or len(df_oi) < periodo:
+        return 0
+    
+    # Asegurarse que los datos estén ordenados por timestamp (ascendente)
+    df_sorted = df_oi.sort_values('timestamp')
+    
+    # Calcular la media móvil para suavizar la tendencia
+    df_sorted['oi_sma'] = df_sorted['sumOpenInterest'].rolling(window=min(3, len(df_sorted))).mean()
+    
+    # Llenar NaN con el primer valor válido
+    df_sorted['oi_sma'] = df_sorted['oi_sma'].fillna(df_sorted['sumOpenInterest'])
+    
+    # Obtener los valores recientes para comparar
+    recent_oi = df_sorted['sumOpenInterest'].iloc[-periodo:].values
+    
+    # Calcular el porcentaje de cambio
+    cambio_porcentual = ((recent_oi[-3] - recent_oi[0]) / recent_oi[0]) * 100
+    return cambio_porcentual,recent_oi[-3],recent_oi[0]
+
+
 def analizar_tendencia_open_interest(df_oi, periodo=5):
     """
     Analiza la tendencia del open interest para determinar si es alcista o bajista.
@@ -1343,3 +1376,56 @@ def check_rising_oi(df, symbol, periods=5):
         print(f"🔔 Alerta: Open Interest de {symbol} ha subido en los últimos {periods} períodos consecutivos.")
         return True
     return False
+
+
+
+def get_variacion_open_interest_binance(symbol="BTCUSDT", interval="5m", limit=6):
+        """
+        Obtiene el Open Interest de un símbolo en Binance para las últimas N velas en un intervalo específico.
+        
+        Parámetros:
+        - symbol (str): Par de trading, por defecto "BTCUSDT"
+        - interval (str): Intervalo de tiempo, por defecto "5m"
+        - limit (int): Número de velas a obtener, por defecto 20
+        
+        Retorna:
+        - pandas.DataFrame: DataFrame con el Open Interest y su timestamp
+        """
+        try:
+            
+            # Endpoint para obtener el Open Interest de Binance
+            url = f"https://fapi.binance.com/fapi/v1/openInterest"
+            
+            # Obtener Open Interest histórico
+            historical_url = f"https://fapi.binance.com/futures/data/openInterestHist"
+            params = {
+                "symbol": symbol,
+                "period": interval,
+                "limit": limit
+            }
+            
+            response = requests.get(historical_url, params=params)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Convertir a DataFrame
+                df = pd.DataFrame(data)
+                
+                # Convertir campos a tipos apropiados
+                df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+                df['sumOpenInterest'] = df['sumOpenInterest'].astype(float)
+                df['sumOpenInterestValue'] = df['sumOpenInterestValue'].astype(float)
+
+
+                variacion, h, l= analizar_viariacion_open_interest(df, periodo=limit)
+
+                return variacion,h,l
+            else:
+                print(f"Error al obtener datos: {response.status_code}")
+                print(response.text)
+                return None, None, None
+            
+        except Exception as e:
+            return None, None, None
+

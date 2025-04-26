@@ -1293,7 +1293,7 @@ def operar8(simbolos,sr):
 
                         if len(opened_positions_short) >= max_ops_short:
                             logger(f"{symbol:<18} operaciones abiertas en short {len(opened_positions_short)} | maximo configurado es {max_ops_short}.")
-                            time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                            time.sleep(random.randint(sleep_rand_from*20, sleep_rand_to*20))
                             continue
 
                         # Datos de la moneda precio y pasos.

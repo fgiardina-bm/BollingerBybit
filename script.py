@@ -16,6 +16,7 @@ from functions import *
 from indicators import *
 from config import reload_config
 from sr import *
+from script_grid import *
 
 logger(f"Bot iniciado {timeframe}")
 
@@ -2188,6 +2189,40 @@ def operar0(simbolos): # nuevo calculo soporte y resistencia
             t_logger(f"{symbol};{result:.2f}")
          time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
 
+def operar20(): # grid
+    """
+    Inicia un Grid Bot con parámetros configurados por el usuario
+    """
+    global grid_symbol, grid_num_ordenes, grid_porcentaje_cuenta, grid_distancia, grid_max_perdida
+
+    logger("Iniciando Grid Bot")
+    
+    simbolo = grid_symbol
+    
+    try:
+        num_ordenes =grid_num_ordenes
+        porcentaje_cuenta = grid_porcentaje_cuenta
+        distancia = grid_distancia
+        max_perdida = grid_max_perdida
+        
+        if 2 <= num_ordenes <= 100 and 1 <= porcentaje_cuenta <= 1000 and 0.1 <= distancia <= 5 and 1 <= max_perdida <= 10:
+            logger(f"Iniciando Grid Bot para {simbolo}")
+            resultado = ejecutar_grid_bot(simbolo, num_ordenes, porcentaje_cuenta, distancia, max_perdida)
+            if resultado:
+                logger(f"Grid Bot iniciado exitosamente para {simbolo}")
+                return True
+            else:
+                logger("No se pudo iniciar el Grid Bot")
+                return False
+        else:
+            logger("Parámetros fuera de rango permitido")
+            return False
+    except ValueError:
+        logger("Error en el formato de los parámetros")
+        return False
+
+
+
 def get_syr(symbol):
     global soportes_resistencias
 
@@ -2214,11 +2249,12 @@ def get_syr_n(symbol):
 # Lista de otros símbolos a buscar
 otros_simbolos = []
 
-if symbols_from == 'binance':
-    otros_simbolos = obtener_simbolos_mayor_volumen_binance(cnt_symbols)
+if strategy != 20:
+    if symbols_from == 'binance':
+        otros_simbolos = obtener_simbolos_mayor_volumen_binance(cnt_symbols)
 
-if symbols_from == 'bybit':
-    otros_simbolos = obtener_simbolos_mayor_volumen(cnt_symbols)
+    if symbols_from == 'bybit':
+        otros_simbolos = obtener_simbolos_mayor_volumen(cnt_symbols)
 
 
 if strategy == 1:
@@ -2313,6 +2349,15 @@ if strategy == 11: # pruebas
             time.sleep(1)
         except Exception as e:
             logger(f"Error en strategy {simbolo}: {e}")
+
+
+
+if strategy == 20: # grid
+    try:
+        hilo = threading.Thread(target=operar20, args=()) 
+        hilo.start()
+    except Exception as e:
+        logger(f"Error en strategy {simbolo}: {e}")
 
 
 if strategy == 0: # pruebas

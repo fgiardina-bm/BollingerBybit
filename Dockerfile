@@ -41,6 +41,7 @@ COPY ./indicators.py ./
 COPY ./sr.py ./
 COPY ./oscillator.py ./
 COPY ./oi.py ./
+COPY ./script_grid.py ./
 
 # Instalar dependencias
 RUN pip install --no-cache-dir -r requirements.txt

@@ -29,7 +29,7 @@ def operar_grid_avanzado(simbolo, num_ordenes=30, porcentaje_account=10, distanc
         distancia_entre_ordenes (float): Porcentaje de distancia entre cada orden
         max_perdida_porcentaje (float): Porcentaje máximo de pérdida permitido
     """
-    global saldo_usdt_inicial, client
+    global saldo_usdt_inicial, client, grid_distancia_factor
     
     # Obtener información del mercado
     ticker = client.get_tickers(category='linear', symbol=simbolo)
@@ -123,7 +123,9 @@ def operar_grid_avanzado(simbolo, num_ordenes=30, porcentaje_account=10, distanc
     # 4. Crear órdenes long (por debajo del precio actual)
     for i in range(num_ordenes_long):
         # Cada orden está a 'distancia_ajustada'% por debajo de la anterior
-        precio_orden = precio_actual * (1 - ((i+1) * distancia_ajustada / 100))
+        # Apply increasing distance factor (1.05) for orders that are further away
+        distance_factor = grid_distancia_factor ** i  # This will be 1.0, 1.05 , 1.1025, 1.157625, etc.
+        precio_orden = precio_actual * (1 - ((i+1) * distancia_ajustada * distance_factor / 100))
         precio_orden = qty_step(precio_orden, simbolo)  # Ajustar al paso de precio
         
         # Calcular cantidad a comprar
@@ -160,7 +162,8 @@ def operar_grid_avanzado(simbolo, num_ordenes=30, porcentaje_account=10, distanc
     # 5. Crear órdenes short (por encima del precio actual)
     for i in range(num_ordenes_short):
         # Cada orden está a 'distancia_ajustada'% por encima de la anterior
-        precio_orden = precio_actual * (1 + ((i+1) * distancia_ajustada / 100))
+        distance_factor = grid_distancia_factor ** i  # This will be 1.0, 1.05 , 1.1025, 1.157625, etc.
+        precio_orden = precio_actual * (1 + ((i+1) * distancia_ajustada * distance_factor / 100))
         precio_orden = qty_step(precio_orden, simbolo)
         
         # Calcular cantidad a vender
@@ -309,117 +312,117 @@ def monitorear_grid_avanzado(simbolo, info_grid):
             precio_actual = float(ticker['result']['list'][0]['lastPrice'])
             
             # Verificar y reponer órdenes cada 5 minutos
-            if time.time() - ultima_verificacion_ordenes > 300:  # 5 minutos
-                logger(f"Verificando y reponiendo órdenes para {simbolo}...")
+            # if time.time() - ultima_verificacion_ordenes > 300:  # 5 minutos
+            #     logger(f"Verificando y reponiendo órdenes para {simbolo}...")
                 
-                # Obtener órdenes activas
-                ordenes_activas = client.get_open_orders(category="linear", symbol=simbolo)
-                num_ordenes_activas = len(ordenes_activas['result']['list'])
+            #     # Obtener órdenes activas
+            #     ordenes_activas = client.get_open_orders(category="linear", symbol=simbolo)
+            #     num_ordenes_activas = len(ordenes_activas['result']['list'])
                 
-                # Obtener posición promedio de entrada
-                posicion_side = "long" if float(posiciones['result']['list'][0]['size']) > 0 else "short"
-                precio_entrada = float(posiciones['result']['list'][0]['avgPrice'])
+            #     # Obtener posición promedio de entrada
+            #     posicion_side = "long" if float(posiciones['result']['list'][0]['size']) > 0 else "short"
+            #     precio_entrada = float(posiciones['result']['list'][0]['avgPrice'])
                 
-                logger(f"Posición actual: {posicion_side.upper()} a precio promedio {precio_entrada}")
-                logger(f"Órdenes activas: {num_ordenes_activas} de {info_grid['num_ordenes']}")
+            #     logger(f"Posición actual: {posicion_side.upper()} a precio promedio {precio_entrada}")
+            #     logger(f"Órdenes activas: {num_ordenes_activas} de {info_grid['num_ordenes']}")
                 
-                # Verificar si necesitamos reponer órdenes
-                if num_ordenes_activas < info_grid['num_ordenes'] * 0.7:  # Si tenemos menos del 70% de las órdenes originales
-                    # Calcular cuántas órdenes necesitamos reponer
-                    ordenes_a_reponer = info_grid['num_ordenes'] - num_ordenes_activas
-                    logger(f"Reponiendo {ordenes_a_reponer} órdenes...")
+            #     # Verificar si necesitamos reponer órdenes
+            #     if num_ordenes_activas < info_grid['num_ordenes'] * 0.7:  # Si tenemos menos del 70% de las órdenes originales
+            #         # Calcular cuántas órdenes necesitamos reponer
+            #         ordenes_a_reponer = info_grid['num_ordenes'] - num_ordenes_activas
+            #         logger(f"Reponiendo {ordenes_a_reponer} órdenes...")
                     
-                    # Calcular el saldo disponible para nuevas órdenes
-                    saldo_actual = obtener_saldo_usdt()
-                    usdt_por_orden = saldo_actual * (porcentaje_por_orden / 100)
+            #         # Calcular el saldo disponible para nuevas órdenes
+            #         saldo_actual = obtener_saldo_usdt()
+            #         usdt_por_orden = saldo_actual * (porcentaje_por_orden / 100)
                     
-                    # Obtener ATR para ajustar distancias
-                    datam = obtener_datos_historicos(simbolo, timeframe)
-                    atr = talib.ATR(
-                        np.array(datam[2]),  # high
-                        np.array(datam[3]),  # low
-                        np.array(datam[4]),  # close
-                        timeperiod=14
-                    )
-                    atr_actual = atr[-1]
+            #         # Obtener ATR para ajustar distancias
+            #         datam = obtener_datos_historicos(simbolo, timeframe)
+            #         atr = talib.ATR(
+            #             np.array(datam[2]),  # high
+            #             np.array(datam[3]),  # low
+            #             np.array(datam[4]),  # close
+            #             timeperiod=14
+            #         )
+            #         atr_actual = atr[-1]
                     
-                    # Ajustar distancia según volatilidad
-                    distancia_ajustada = info_grid["distancia"]
-                    volatilidad_porcentaje = (atr_actual / precio_actual) * 100
-                    if volatilidad_porcentaje > 1.5:
-                        distancia_ajustada = info_grid["distancia"] * 1.5
-                    elif volatilidad_porcentaje < 0.5:
-                        distancia_ajustada = max(0.2, info_grid["distancia"] * 0.8)
+            #         # Ajustar distancia según volatilidad
+            #         distancia_ajustada = info_grid["distancia"]
+            #         volatilidad_porcentaje = (atr_actual / precio_actual) * 100
+            #         if volatilidad_porcentaje > 1.5:
+            #             distancia_ajustada = info_grid["distancia"] * 1.5
+            #         elif volatilidad_porcentaje < 0.5:
+            #             distancia_ajustada = max(0.2, info_grid["distancia"] * 0.8)
                     
-                    # Si tenemos posición long, crear órdenes LONG por debajo del precio de entrada
-                    if posicion_side == "long":
-                        for i in range(min(ordenes_a_reponer, 5)):  # Limitamos a 5 órdenes por ciclo
-                            # Calcular precio por debajo del precio de entrada
-                            precio_orden = precio_entrada * (1 - ((i+1) * distancia_ajustada / 100))
-                            precio_orden = qty_step(precio_orden, simbolo)
+            #         # Si tenemos posición long, crear órdenes LONG por debajo del precio de entrada
+            #         if posicion_side == "long":
+            #             for i in range(min(ordenes_a_reponer, 5)):  # Limitamos a 5 órdenes por ciclo
+            #                 # Calcular precio por debajo del precio de entrada
+            #                 precio_orden = precio_entrada * (1 - ((i+1) * distancia_ajustada / 100))
+            #                 precio_orden = qty_step(precio_orden, simbolo)
                             
-                            # Solo crear orden si está por debajo del precio actual
-                            if precio_orden < precio_actual * 0.99:  # 1% por debajo del precio actual
-                                # Calcular cantidad a comprar
-                                qty = usdt_por_orden / precio_orden
-                                qty = qty_precision(qty, precision_step)
-                                if qty.is_integer():
-                                    qty = int(qty)
+            #                 # Solo crear orden si está por debajo del precio actual
+            #                 if precio_orden < precio_actual * 0.99:  # 1% por debajo del precio actual
+            #                     # Calcular cantidad a comprar
+            #                     qty = usdt_por_orden / precio_orden
+            #                     qty = qty_precision(qty, precision_step)
+            #                     if qty.is_integer():
+            #                         qty = int(qty)
                                 
-                                try:
-                                    if test_mode == 0:
-                                        response = client.place_order(
-                                            category="linear",
-                                            symbol=simbolo,
-                                            side="Buy",
-                                            orderType="Limit",
-                                            price=str(precio_orden),
-                                            qty=str(qty),
-                                            timeInForce="GTC",
-                                            reduceOnly=False,
-                                            closeOnTrigger=False
-                                        )
-                                        logger(f"Nueva orden LONG: Precio={precio_orden}, Cantidad={qty}")
-                                    else:
-                                        logger(f"[TEST] Nueva orden LONG: Precio={precio_orden}, Cantidad={qty}")
-                                except Exception as e:
-                                    logger(f"Error al crear nueva orden LONG: {e}")
+            #                     try:
+            #                         if test_mode == 0:
+            #                             response = client.place_order(
+            #                                 category="linear",
+            #                                 symbol=simbolo,
+            #                                 side="Buy",
+            #                                 orderType="Limit",
+            #                                 price=str(precio_orden),
+            #                                 qty=str(qty),
+            #                                 timeInForce="GTC",
+            #                                 reduceOnly=False,
+            #                                 closeOnTrigger=False
+            #                             )
+            #                             logger(f"Nueva orden LONG: Precio={precio_orden}, Cantidad={qty}")
+            #                         else:
+            #                             logger(f"[TEST] Nueva orden LONG: Precio={precio_orden}, Cantidad={qty}")
+            #                     except Exception as e:
+            #                         logger(f"Error al crear nueva orden LONG: {e}")
                     
-                    # Si tenemos posición short, crear órdenes SHORT por encima del precio de entrada
-                    elif posicion_side == "short":
-                        for i in range(min(ordenes_a_reponer, 5)):  # Limitamos a 5 órdenes por ciclo
-                            # Calcular precio por encima del precio de entrada
-                            precio_orden = precio_entrada * (1 + ((i+1) * distancia_ajustada / 100))
-                            precio_orden = qty_step(precio_orden, simbolo)
+            #         # Si tenemos posición short, crear órdenes SHORT por encima del precio de entrada
+            #         elif posicion_side == "short":
+            #             for i in range(min(ordenes_a_reponer, 5)):  # Limitamos a 5 órdenes por ciclo
+            #                 # Calcular precio por encima del precio de entrada
+            #                 precio_orden = precio_entrada * (1 + ((i+1) * distancia_ajustada / 100))
+            #                 precio_orden = qty_step(precio_orden, simbolo)
                             
-                            # Solo crear orden si está por encima del precio actual
-                            if precio_orden > precio_actual * 1.01:  # 1% por encima del precio actual
-                                # Calcular cantidad a vender
-                                qty = usdt_por_orden / precio_orden
-                                qty = qty_precision(qty, precision_step)
-                                if qty.is_integer():
-                                    qty = int(qty)
+            #                 # Solo crear orden si está por encima del precio actual
+            #                 if precio_orden > precio_actual * 1.01:  # 1% por encima del precio actual
+            #                     # Calcular cantidad a vender
+            #                     qty = usdt_por_orden / precio_orden
+            #                     qty = qty_precision(qty, precision_step)
+            #                     if qty.is_integer():
+            #                         qty = int(qty)
                                 
-                                try:
-                                    if test_mode == 0:
-                                        response = client.place_order(
-                                            category="linear",
-                                            symbol=simbolo,
-                                            side="Sell",
-                                            orderType="Limit",
-                                            price=str(precio_orden),
-                                            qty=str(qty),
-                                            timeInForce="GTC",
-                                            reduceOnly=False,
-                                            closeOnTrigger=False
-                                        )
-                                        logger(f"Nueva orden SHORT: Precio={precio_orden}, Cantidad={qty}")
-                                    else:
-                                        logger(f"[TEST] Nueva orden SHORT: Precio={precio_orden}, Cantidad={qty}")
-                                except Exception as e:
-                                    logger(f"Error al crear nueva orden SHORT: {e}")
+            #                     try:
+            #                         if test_mode == 0:
+            #                             response = client.place_order(
+            #                                 category="linear",
+            #                                 symbol=simbolo,
+            #                                 side="Sell",
+            #                                 orderType="Limit",
+            #                                 price=str(precio_orden),
+            #                                 qty=str(qty),
+            #                                 timeInForce="GTC",
+            #                                 reduceOnly=False,
+            #                                 closeOnTrigger=False
+            #                             )
+            #                             logger(f"Nueva orden SHORT: Precio={precio_orden}, Cantidad={qty}")
+            #                         else:
+            #                             logger(f"[TEST] Nueva orden SHORT: Precio={precio_orden}, Cantidad={qty}")
+            #                     except Exception as e:
+            #                         logger(f"Error al crear nueva orden SHORT: {e}")
                 
-                ultima_verificacion_ordenes = time.time()
+            #     ultima_verificacion_ordenes = time.time()
             
             # Calcular cambio de precio porcentual
             cambio_porcentual = abs((precio_actual - ultimo_precio) / ultimo_precio * 100)

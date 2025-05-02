@@ -76,6 +76,7 @@ grid_num_ordenes = int(os.getenv("GRID_NUM_ORDENES", 10))
 grid_porcentaje_cuenta = float(os.getenv("GRID_PORCENTAJE_CUENTA", 100.0))
 grid_distancia = float(os.getenv("GRID_DISTANCIA", 0.05))
 grid_max_perdida = float(os.getenv("GRID_MAX_PERDIDA", 2))
+grid_distancia_factor = float(os.getenv("GRID_DISTANCIA_FACTOR", 1.05))
 
 
 

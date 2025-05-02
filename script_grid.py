@@ -243,7 +243,8 @@ def monitorear_grid_avanzado(simbolo, info_grid):
         simbolo (str): Par de trading
         info_grid (dict): Información del grid creado
     """
-    global client
+    global client,grid_hs_rebalanceo
+
     logger('monitorear_grid_avanzado', simbolo)
     ultimo_precio = info_grid["precio_actual"]
     ultima_volatilidad = info_grid["volatilidad"]
@@ -429,7 +430,7 @@ def monitorear_grid_avanzado(simbolo, info_grid):
             logger(f"Precio actual: {precio_actual}, Cambio porcentual: {cambio_porcentual:.2f}%, {time.time() - ultimo_rebalanceo:.2f} segundos desde el último rebalanceo")
             
             # 1. Rebalancear si el precio se ha movido significativamente (>3%)
-            if cambio_porcentual > 2 or (time.time() - ultimo_rebalanceo > 1 * 3600):  # Rebalancear cada 1 horas o si hay cambio significativo
+            if cambio_porcentual > 2 or (time.time() - ultimo_rebalanceo > grid_hs_rebalanceo * 3600):  # Rebalancear cada 1 horas o si hay cambio significativo
                 logger(f"Rebalanceando grid de {simbolo}. Cambio de precio: {cambio_porcentual:.2f}%")
                 
                 # Cancelar todas las órdenes existentes

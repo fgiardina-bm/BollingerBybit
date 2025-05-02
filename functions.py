@@ -1011,6 +1011,7 @@ def get_opened_positions(symbol):
 def logger(log_message,aditional_text=""):
     global timeframe, test_mode
     log_path = f"logs/log-{timeframe}-{time.strftime('%Y%m%d')}.txt"
+    print(log_path)
     with open(log_path, "a") as log_file:
         log_file.write(str(timeframe) + '|' + str(test_mode) + '|' + time.strftime('%Y-%m-%d %H:%M:%S') + " " + log_message + " " + aditional_text + "\n")
 

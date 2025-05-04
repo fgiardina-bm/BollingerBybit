@@ -2138,7 +2138,7 @@ def operar11(simbolos):
 
 
 
-def operar0(simbolos): # nuevo calculo soporte y resistencia
+def operar0(): # nuevo calculo soporte y resistencia
     global opened_positions, opened_positions_short, opened_positions_long
     global saldo_usdt_inicial
     global api_key, api_secret, timeframe, tp_porcent, sl_porcent, cnt_symbols
@@ -2180,14 +2180,25 @@ def operar0(simbolos): # nuevo calculo soporte y resistencia
 
 
 
-    while True:
-         for symbol in simbolos:
-            result, h,l= get_variacion_open_interest_binance(symbol, "5m", 6)
+    # while True:
+    #      for symbol in simbolos:
+    #         result, h,l= get_variacion_open_interest_binance(symbol, "5m", 6)
           
-            print(f"{symbol:<15}\t{result:.2f}\t{h/1_000_000:.2f}M\t{l/1_000_000:.2f}M")
-            logger(f"{symbol:<15}\t{result:.2f}")
-            t_logger(f"{symbol};{result:.2f}")
-         time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+    #         print(f"{symbol:<15}\t{result:.2f}\t{h/1_000_000:.2f}M\t{l/1_000_000:.2f}M")
+    #         logger(f"{symbol:<15}\t{result:.2f}")
+    #         t_logger(f"{symbol};{result:.2f}")
+    #      time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+
+
+
+    # Obtener las 20 monedas más volátiles en timeframe de 4 horas
+    monedas_volatiles = obtener_monedas_por_volatilidad(limite=20, timeframe="240")
+
+    # Opcionalmente, operar con la moneda más volátil
+    if monedas_volatiles:
+        simbolo_mas_volatil = monedas_volatiles[0]['symbol']
+        logger(f"Iniciando grid bot en el par más volátil: {simbolo_mas_volatil}")
+        # ejecutar_grid_bot(simbolo_mas_volatil, num_ordenes=30, porcentaje_cuenta=10, distancia=0.8)
 
 def operar20(): # grid
     """
@@ -2205,7 +2216,7 @@ def operar20(): # grid
         distancia = grid_distancia
         max_perdida = grid_max_perdida
         
-        if 2 <= num_ordenes <= 100 and 1 <= porcentaje_cuenta <= 1000 and 0.1 <= distancia <= 5 and 1 <= max_perdida <= 10:
+        if 2 <= num_ordenes <= 100 and 1 <= porcentaje_cuenta <= 1000 and 0.1 <= distancia <= 5 and 0.01 <= max_perdida <= 0.11:
             logger(f"Iniciando Grid Bot para {simbolo}")
             resultado = ejecutar_grid_bot(simbolo, num_ordenes, porcentaje_cuenta, distancia, max_perdida)
             if resultado:
@@ -2361,12 +2372,16 @@ if strategy == 20: # grid
 
 
 if strategy == 0: # pruebas
-    hilos = []
-    # otros_simbolos = ['AUCTIONUSDT']
-    for simbolo in otros_simbolos:
-        try:
-            hilo = threading.Thread(target=operar0, args=([simbolo],)) 
-            hilo.start()
-            time.sleep(1)
-        except Exception as e:
-            logger(f"Error en strategy {simbolo}: {e}")
+
+    hilo = threading.Thread(target=operar0, args=()) 
+    hilo.start()
+
+    # hilos = []
+    # # otros_simbolos = ['AUCTIONUSDT']
+    # for simbolo in otros_simbolos:
+    #     try:
+    #         hilo = threading.Thread(target=operar0, args=([simbolo],)) 
+    #         hilo.start()
+    #         time.sleep(1)
+    #     except Exception as e:
+    #         logger(f"Error en strategy {simbolo}: {e}")

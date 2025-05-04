@@ -18,7 +18,7 @@ from config import reload_config
 from sr import *
 
 
-def operar_grid_avanzado(simbolo, num_ordenes=30, porcentaje_account=10, distancia_entre_ordenes=0.5, max_perdida_porcentaje=2):
+def operar_grid_avanzado(simbolo, num_ordenes=30, porcentaje_account=10, distancia_entre_ordenes=0.5, max_perdida_porcentaje=0.02):
     """
     Implementación avanzada de un Grid Bot para Bybit con gestión dinámica y protección contra riesgos.
     
@@ -42,7 +42,7 @@ def operar_grid_avanzado(simbolo, num_ordenes=30, porcentaje_account=10, distanc
     # Calcular el saldo disponible para el grid
     saldo_usdt = obtener_saldo_usdt()
     usdt_total = saldo_usdt * (porcentaje_account / 100)
-    max_perdida_absoluta = saldo_usdt * (max_perdida_porcentaje / 100)  # Pérdida máxima permitida
+    max_perdida_absoluta = saldo_usdt * max_perdida_porcentaje  # Pérdida máxima permitida
     
     logger(f"Iniciando Grid Bot para {simbolo}")
     logger(f"Precio actual: {precio_actual}")
@@ -210,7 +210,7 @@ def operar_grid_avanzado(simbolo, num_ordenes=30, porcentaje_account=10, distanc
         "distancia": distancia_ajustada,
         "volatilidad": volatilidad_porcentaje,
         "tendencia": tendencia_direccion,
-        "max_perdida_porcentaje": max_perdida_porcentaje,
+        "t": max_perdida_porcentaje,
     }
 
 def hay_ordenes_activas(simbolo):
@@ -243,7 +243,7 @@ def monitorear_grid_avanzado(simbolo, info_grid):
         simbolo (str): Par de trading
         info_grid (dict): Información del grid creado
     """
-    global client,grid_hs_rebalanceo
+    global client,grid_hs_rebalanceo,grid_porcentaje_rebalanceo
 
     logger('monitorear_grid_avanzado', simbolo)
     ultimo_precio = info_grid["precio_actual"]
@@ -254,7 +254,7 @@ def monitorear_grid_avanzado(simbolo, info_grid):
     
     # Obtener saldo total de la cuenta para cálculos de stop loss
     saldo_total_inicial = obtener_saldo_usdt()
-    stop_loss_threshold = -0.05 * saldo_total_inicial  # Stop loss al -5% del saldo total
+    stop_loss_threshold = -(max_perdida_porcentaje) * saldo_total_inicial  # Stop loss al -5% del saldo total
     
     # Información sobre la precisión del símbolo
     step_info = client.get_instruments_info(category="linear", symbol=simbolo)
@@ -430,7 +430,7 @@ def monitorear_grid_avanzado(simbolo, info_grid):
             logger(f"Precio actual: {precio_actual}, Cambio porcentual: {cambio_porcentual:.2f}%, {time.time() - ultimo_rebalanceo:.2f} segundos desde el último rebalanceo")
             
             # 1. Rebalancear si el precio se ha movido significativamente (>3%)
-            if cambio_porcentual > 2 or (time.time() - ultimo_rebalanceo > grid_hs_rebalanceo * 3600):  # Rebalancear cada 1 horas o si hay cambio significativo
+            if cambio_porcentual > grid_porcentaje_rebalanceo or (time.time() - ultimo_rebalanceo > grid_hs_rebalanceo * 3600):  # Rebalancear cada 1 horas o si hay cambio significativo
                 logger(f"Rebalanceando grid de {simbolo}. Cambio de precio: {cambio_porcentual:.2f}%")
                 
                 # Cancelar todas las órdenes existentes
@@ -512,7 +512,7 @@ def monitorear_grid_avanzado(simbolo, info_grid):
             logger(f"Error en monitoreo del grid de {simbolo}: {e}")
             time.sleep(60)
 
-def ejecutar_grid_bot(simbolo, num_ordenes=30, porcentaje_cuenta=10, distancia=0.5, max_perdida=2):
+def ejecutar_grid_bot(simbolo, num_ordenes=30, porcentaje_cuenta=10, distancia=0.5, max_perdida=0.02):
     """
     Función principal para ejecutar el grid bot.
     
@@ -554,6 +554,95 @@ def ejecutar_grid_bot(simbolo, num_ordenes=30, porcentaje_cuenta=10, distancia=0
     except Exception as e:
         logger(f"Error al iniciar Grid Bot para {simbolo}: {e}")
         return False
+
+def obtener_monedas_por_volatilidad(limite=30, timeframe="240", filtro_volumen=50):
+    """
+    Analiza las monedas con mayor volumen en Bybit y las devuelve ordenadas por volatilidad.
+    
+    Args:
+        limite (int): Cantidad máxima de monedas a devolver en el resultado final
+        timeframe (str): Marco temporal para el cálculo de volatilidad (ej. "240" para 4h)
+        filtro_volumen (int): Número de monedas con mayor volumen a analizar
+        
+    Returns:
+        list: Lista de diccionarios con información sobre la volatilidad de cada moneda
+    """
+    print(f"Analizando las {filtro_volumen} monedas con mayor volumen en Bybit...")
+    monedas_volatiles = []
+    
+    try:
+        # Obtener todos los símbolos de Bybit
+        tickers = client.get_tickers(category='linear')
+        if tickers["retCode"] != 0:
+            print("Error al obtener tickers de Bybit")
+            return []
+            
+        # Filtrar solo los símbolos que terminan en "USDT"
+        usdt_tickers = [ticker for ticker in tickers['result']['list'] 
+                        if ticker['symbol'].endswith('USDT')]
+        
+        # Ordenar por volumen de operaciones (turnover24h) de mayor a menor
+        usdt_tickers.sort(key=lambda x: float(x['turnover24h']), reverse=True)
+        
+        # Tomar solo las N monedas con mayor volumen
+        top_volumen_tickers = usdt_tickers[:filtro_volumen]
+        
+        total_symbols = len(top_volumen_tickers)
+        print(f"Analizando volatilidad de las {total_symbols} monedas con mayor volumen...")
+        
+        # Procesamos cada símbolo
+        for idx, ticker in enumerate(top_volumen_tickers):
+            symbol = ticker['symbol']
+            try:
+                # Obtener datos históricos
+                datam = obtener_datos_historicos(symbol, timeframe)
+                
+                # Calcular ATR (Average True Range) - indicador de volatilidad
+                atr = talib.ATR(
+                    np.array(datam[2]),  # high
+                    np.array(datam[3]),  # low
+                    np.array(datam[4]),  # close
+                    timeperiod=14
+                )
+                
+                precio_actual = float(ticker['lastPrice'])
+                volatilidad_porcentaje = (atr[-1] / precio_actual) * 100
+                volumen_24h = float(ticker['turnover24h'])
+                
+                # Añadir a la lista
+                monedas_volatiles.append({
+                    "symbol": symbol,
+                    "volatilidad": volatilidad_porcentaje,
+                    "precio": precio_actual,
+                    "volumen_24h": volumen_24h,
+                    "volumen_rank": idx + 1  # Posición en ranking por volumen
+                })
+                
+                if (idx + 1) % 5 == 0:
+                    print(f"Progreso: {idx + 1}/{total_symbols}")
+                    
+            except Exception as e:
+                print(f"Error al analizar {symbol}: {e}")
+                continue
+        
+        # Ordenar por volatilidad (de mayor a menor)
+        monedas_volatiles.sort(key=lambda x: x["volatilidad"], reverse=True)
+        
+        # Mostrar resultados
+        print("\n--- TOP MONEDAS POR VOLATILIDAD (Filtradas por volumen) ---")
+        print("Rank | Símbolo   | Volatilidad | Precio        | Volumen 24h | Rank Vol")
+        print("-" * 75)
+        
+        for idx, moneda in enumerate(monedas_volatiles[:limite]):
+            print(f"{idx+1:4} | {moneda['symbol']:<10} | {moneda['volatilidad']:9.2f}% | "
+                  f"{moneda['precio']:<13.6f} | {moneda['volumen_24h']/1000000:8.2f}M | {moneda['volumen_rank']:8}")
+        
+        return monedas_volatiles[:limite]
+        
+    except Exception as e:
+        print(f"Error al obtener monedas por volatilidad: {e}")
+        return []
+
 
 
 def iniciar_grid_bot():

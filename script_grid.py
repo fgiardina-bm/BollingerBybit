@@ -210,7 +210,7 @@ def operar_grid_avanzado(simbolo, num_ordenes=30, porcentaje_account=10, distanc
         "distancia": distancia_ajustada,
         "volatilidad": volatilidad_porcentaje,
         "tendencia": tendencia_direccion,
-        "t": max_perdida_porcentaje,
+        "max_perdida_porcentaje": max_perdida_porcentaje,
     }
 
 def hay_ordenes_activas(simbolo):

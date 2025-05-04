@@ -80,7 +80,6 @@ grid_distancia_factor = float(os.getenv("GRID_DISTANCIA_FACTOR", 1.05))
 grid_hs_rebalanceo = int(os.getenv("GRID_HS_REBALANCEO", 1))
 grid_porcentaje_rebalanceo = float(os.getenv("GRID_PORCENTAJE_REBALANCEO", 3.0))
 
-
 config_lock = threading.Lock()
 
 opened_positions = []

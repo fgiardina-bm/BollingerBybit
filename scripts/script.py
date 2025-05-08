@@ -1286,7 +1286,7 @@ def operar8(simbolos,sr):
                 
                    # si la diferencia absoluta entre min_distance_percent y min_resistance_distance es menor a 5 no operar
                     if abs(min_distance_percent - min_resistance_distance) < sr_distance:
-                        logger(f"{symbol} diferencia entre soporte y resistencia menor a 5% no operar")
+                        logger(f"{symbol} diferencia entre soporte y resistencia menor a {sr_distance}% no operar")
                         time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                         continue
                         

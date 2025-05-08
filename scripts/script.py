@@ -1129,7 +1129,7 @@ def operar8(simbolos,sr):
     global opened_positions_long, opened_positions_short
     global max_ops_long, max_ops_short, sr_fib_tolerancia, sr_fib_velas,account_usdt_limit, order_book_limit, order_book_delay_divisor
     global sl_multiplicador, tp_multiplicador
-    global sl_percentaje_account
+    global sl_percentaje_account,sr_distance
 
     sop_res = sr
     logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
@@ -1285,7 +1285,7 @@ def operar8(simbolos,sr):
                     logger(log_message)
                 
                    # si la diferencia absoluta entre min_distance_percent y min_resistance_distance es menor a 5 no operar
-                    if abs(min_distance_percent - min_resistance_distance) < 5:
+                    if abs(min_distance_percent - min_resistance_distance) < sr_distance:
                         logger(f"{symbol} diferencia entre soporte y resistencia menor a 5% no operar")
                         time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
                         continue

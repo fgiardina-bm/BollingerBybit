@@ -71,6 +71,8 @@ detectar_incluir_adx = int(os.getenv("DETECTAR_INCLUIR_ADX", 1))
 sl_callback_progresive = float(os.getenv("SL_CALLBACK_PROGRESIVE", 0.7))
 symbols_from = os.getenv("SYMBOLS_FROM", 'binance')
 
+sr_distance = int(os.getenv("SR_DISTANCE", 5))
+
 grid_symbol = os.getenv("GRID_SYMBOL", 'BTCUSDT')
 grid_num_ordenes = int(os.getenv("GRID_NUM_ORDENES", 10))
 grid_porcentaje_cuenta = float(os.getenv("GRID_PORCENTAJE_CUENTA", 100.0))

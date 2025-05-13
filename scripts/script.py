@@ -1342,6 +1342,7 @@ def operar8(simbolos,sr):
                         stop_loss_param,_,_,_ = establecer_stop_loss_dinamico(df, sl_multiplicador, tipo_trade='short', timeframe=timeframe)
                         take_profit_param,_,_,_ = establecer_take_profit_dinamico(df, tp_multiplicador, tipo_trade='short', timeframe=timeframe)
                         crear_orden_con_stoploss_takeprofit(symbol, "Sell", "Market", qty,stop_loss_param,take_profit_param)
+                        
                         if monitoring == 1:
                             # Iniciar el monitoreo de la operación
                             precio_entrada = float(client.get_tickers(category='linear', symbol=symbol)['result']['list'][0]['lastPrice'])

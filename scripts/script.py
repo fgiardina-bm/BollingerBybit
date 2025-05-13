@@ -1200,8 +1200,8 @@ def operar8(simbolos,sr):
                                     hilo_monitoreo.start()
                                 
                     else:
-                        logger(f"Hay una posicion abierta en {symbol} espero 60 segundos")
-                        time.sleep(60)
+                        logger(f"Hay una posicion abierta en {symbol} espero 4 hs")
+                        time.sleep(60*60*4)
                 else:
 
                     if symbol in opened_positions:

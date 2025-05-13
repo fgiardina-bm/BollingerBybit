@@ -1251,7 +1251,7 @@ def operar8(simbolos,sr):
                         time.sleep(random.randint(sleep_rand_from*60, sleep_rand_to*60))
                         continue
 
-                    if bucle_cnt >= random.randint(30, 80):
+                    if bucle_cnt >= random.randint(200, 300):
                         sop_res = get_syr(symbol)
                         bucle_cnt = 2
 

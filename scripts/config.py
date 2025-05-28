@@ -72,6 +72,7 @@ sl_callback_progresive = float(os.getenv("SL_CALLBACK_PROGRESIVE", 0.7))
 symbols_from = os.getenv("SYMBOLS_FROM", 'binance')
 
 sr_distance = int(os.getenv("SR_DISTANCE", 5))
+sr_mode = int(os.getenv("SR_MODE", 1))
 
 grid_symbol = os.getenv("GRID_SYMBOL", 'BTCUSDT')
 grid_num_ordenes = int(os.getenv("GRID_NUM_ORDENES", 10))

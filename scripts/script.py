@@ -1129,7 +1129,7 @@ def operar8(simbolos,sr):
     global opened_positions_long, opened_positions_short
     global max_ops_long, max_ops_short, sr_fib_tolerancia, sr_fib_velas,account_usdt_limit, order_book_limit, order_book_delay_divisor
     global sl_multiplicador, tp_multiplicador
-    global sl_percentaje_account,sr_distance
+    global sl_percentaje_account,sr_distance, sr_mode
 
     sop_res = sr
     logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
@@ -1252,7 +1252,7 @@ def operar8(simbolos,sr):
                         continue
 
                     if bucle_cnt >= random.randint(200, 300):
-                        sop_res = get_syr(symbol)
+                        sop_res = get_syr(symbol) if sr_mode == 1 else get_syr_n(symbol)
                         bucle_cnt = 2
 
                     signal_long  = detectar_reversion_alcista(df, sop_res['soportes_total'], top_rsi, bottom_rsi)
@@ -2324,7 +2324,7 @@ if strategy == 8: # varios
     hilos = []
     for simbolo in otros_simbolos:
         try:
-            item = get_syr(simbolo)
+            item = get_syr(simbolo) if sr_mode == 1 else get_syr_n(simbolo)
             hilo = threading.Thread(target=operar8, args=([simbolo],item,)) 
             hilo.start()
         except Exception as e:

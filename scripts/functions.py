@@ -1580,10 +1580,8 @@ def get_btc_price_change_ticker():
         if not hasattr(get_btc_price_change_ticker, "_cache"):
             get_btc_price_change_ticker._cache = {"value": None, "timestamp": 0}
         cache = get_btc_price_change_ticker._cache
-        print(f"Cache: {cache}")
         now = time.time()
         if cache["value"] is not None and now - cache["timestamp"] < 120:  # 5 minutes cache
-            print(f"Valor cacheado: {cache['value']}")
             return float(cache["value"])
 
         # If not cached or cache expired, fetch and cache
@@ -1595,10 +1593,8 @@ def get_btc_price_change_ticker():
 
         # Check if another process is already executing
         if cache.get("executing", False):
-            print("Ya se está ejecutando get_btc_price_change_ticker, devolviendo 0.")
             # En vez de retornar 0.0, retorna el último valor cacheado si existe
             if cache["value"] is not None:
-                print(f"Retornando último valor cacheado: {cache['value']}")
                 return float(cache["value"])
             return 0.0
         cache["executing"] = True

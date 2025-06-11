@@ -1136,9 +1136,11 @@ def operar8(simbolos,sr):
 
     bucle_cnt = 0
     while True:
+
          bucle_cnt += 1 
          for symbol in simbolos:
             try:
+                # reload_config()        
                 posiciones = get_opened_positions(symbol=symbol)
                 if float(posiciones['result']['list'][0]['size']) != 0:
 
@@ -1203,15 +1205,16 @@ def operar8(simbolos,sr):
                         logger(f"Hay una posicion abierta en {symbol} espero 4 hs")
                         time.sleep(60*60*4)
                 else:
-
                     if symbol in opened_positions:
                         opened_positions.remove(symbol)
 
 
-                    btc_change = get_btc_price_change()
+                    btc_change = 0.0
+                    print(f"Verificando BTC cambio para {symbol}")
+                    btc_change = get_btc_price_change_ticker()
                     if abs(btc_change) > percentage_max_btc_change:
                         logger(f"{symbol} Cambio de BTC demasiado alto: {btc_change:.2f}%, saltando")
-                        time.sleep(60*60*2)
+                        time.sleep(30)
                         continue
 
                     if len(opened_positions) >= max_ops:
@@ -1219,10 +1222,10 @@ def operar8(simbolos,sr):
                         time.sleep(60)
                         continue
 
-                    if bucle_cnt < 2:
-                        logger(f"{symbol} no OPERAR aun | {bucle_cnt}.")
-                        time.sleep(20)
-                        continue
+                    # if bucle_cnt < 2:
+                    #     logger(f"{symbol} NO OPERAR POR BUCLE Nro: {bucle_cnt}.")
+                    #     time.sleep(20)
+                    #     continue
 
                     # Obtener datos historicos
                     datam = obtener_datos_historicos(symbol, timeframe)
@@ -1249,10 +1252,12 @@ def operar8(simbolos,sr):
                         'volume': volumes
                     })
 
+                    print(f"Verificando ticker para {symbol}")
                     ticker = client.get_tickers(category='linear', symbol=symbol)
                     precio = float(ticker['result']['list'][0]['lastPrice'])
                     fundingRate = float(ticker['result']['list'][0]['fundingRate'])
 
+                    print(f"fin Verificando ticker para {symbol}")
                     if abs(fundingRate) > 0.0015:  # 0.15% as decimal
                         logger(f"{symbol} Funding rate demasiado alto: {(fundingRate*100):.4f}, saltando")
                         time.sleep(random.randint(sleep_rand_from*60, sleep_rand_to*60))
@@ -1288,7 +1293,7 @@ def operar8(simbolos,sr):
                                 closest_resistance = resistance
 
 
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tbtc_change:{btc_change:.2f}%\tff: {(fundingRate*100):.4f}\tsupport: {min_distance_percent:.2f}%\tresistance: {min_resistance_distance:.2f}%\t8"
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tbtc:{btc_change:.2f}% ({percentage_max_btc_change})\tff: {(fundingRate*100):.4f}\tsupport: {min_distance_percent:.2f}%\tresistance: {min_resistance_distance:.2f}%\t8"
                     logger(log_message)
                 
                    # si la diferencia absoluta entre min_distance_percent y min_resistance_distance es menor a 5 no operar

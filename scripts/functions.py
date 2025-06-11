@@ -161,6 +161,7 @@ def obtener_simbolos_mayor_volumen_binance(cnt=10):
             # Log the symbols with their volume for reference
             logger(f"Símbolo: {item['symbol']} Volumen: {float(item['quoteVolume']) / 1000000:.2f} M")
         
+        get_btc_price_change_ticker()
 
         # Remover los símbolos que están en la lista negra
         top_simbolos = [symbol for symbol in top_simbolos if symbol not in black_list_symbols]
@@ -987,7 +988,6 @@ def get_opened_positions(symbol):
 
     try:
         posiciones = client.get_positions(category="linear", symbol=symbol)
-
         if float(posiciones['result']['list'][0]['size']) == 0:
             if symbol in opened_positions_long:
                 opened_positions_long.remove(symbol)
@@ -1571,3 +1571,65 @@ def get_btc_price_change():
     except Exception as e:
         logger(f"Error al obtener el cambio porcentual del precio de BTC: {e}")
         return None
+
+
+def get_btc_price_change_ticker():
+
+    try:
+        # Simple in-memory cache for 1 hour
+        if not hasattr(get_btc_price_change_ticker, "_cache"):
+            get_btc_price_change_ticker._cache = {"value": None, "timestamp": 0}
+        cache = get_btc_price_change_ticker._cache
+        print(f"Cache: {cache}")
+        now = time.time()
+        if cache["value"] is not None and now - cache["timestamp"] < 120:  # 5 minutes cache
+            print(f"Valor cacheado: {cache['value']}")
+            return float(cache["value"])
+
+        # If not cached or cache expired, fetch and cache
+        exchange = ccxt.binance({
+            'enableRateLimit': True,
+            'options': {'defaultType': 'future'}  # Para usar el mercado de futuros
+        })
+        
+
+        # Check if another process is already executing
+        if cache.get("executing", False):
+            print("Ya se está ejecutando get_btc_price_change_ticker, devolviendo 0.")
+            # En vez de retornar 0.0, retorna el último valor cacheado si existe
+            if cache["value"] is not None:
+                print(f"Retornando último valor cacheado: {cache['value']}")
+                return float(cache["value"])
+            return 0.0
+        cache["executing"] = True
+        try:
+            value = 0.0
+            tickers = exchange.fetch_tickers()
+            ticker = None
+            for i, (symbol, data) in enumerate(list(tickers.items())):
+                    if symbol.endswith('USDT'):
+                        item = {
+                            "symbol":data['info']['symbol'],
+                            "quoteVolume": data['info']['quoteVolume'],
+                            "priceChangePercent": data['info']['priceChangePercent']
+                        }
+                        if item['symbol'] == 'BTCUSDT':
+                            print(f"Encontrado BTCUSDT en tickers: {item}")
+                            ticker = item
+                            break
+                        
+
+            value = float(ticker['priceChangePercent'])
+            cache["value"] = value
+            cache["timestamp"] = now
+            return value
+        finally:
+            cache["executing"] = False
+
+
+        
+    except Exception as e:
+        logger(f"Error al obtener el cambio porcentual del ticker de BTC: {e}")
+        return 0.0
+
+    

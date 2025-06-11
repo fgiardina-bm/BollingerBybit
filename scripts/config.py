@@ -73,6 +73,7 @@ symbols_from = os.getenv("SYMBOLS_FROM", 'binance')
 
 sr_distance = int(os.getenv("SR_DISTANCE", 5))
 sr_mode = int(os.getenv("SR_MODE", 1))
+percentage_max_btc_change = float(os.getenv("PERCENTAGE_MAX_BTC_CHANGE", 2.0))
 
 grid_symbol = os.getenv("GRID_SYMBOL", 'BTCUSDT')
 grid_num_ordenes = int(os.getenv("GRID_NUM_ORDENES", 10))

@@ -143,7 +143,8 @@ def obtener_simbolos_mayor_volumen_binance(cnt=10):
             if symbol.endswith('USDT'):
                 item = {
                     "symbol":data['info']['symbol'],
-                    "quoteVolume": data['info']['quoteVolume']
+                    "quoteVolume": data['info']['quoteVolume'],
+                    "priceChangePercent": data['info']['priceChangePercent']
                 }
                 usdt_tickers.append(item)
 
@@ -1551,3 +1552,22 @@ def detectar_tendencia_fuerte(symbol, df, umbral = 0.01):
         return "bajista"
     else:
         return "nada"
+
+
+def get_btc_price_change():
+    """
+    Obtiene el cambio porcentual del precio de BTC en las últimas 24 horas.
+    
+    Retorna:
+        float: Cambio porcentual del precio de BTC.
+    """
+    try:
+        ticker = client.get_tickers(category='linear', symbol='BTCUSDT')
+        precio_actual = float(ticker['result']['list'][0]['lastPrice'])
+        precio_24h_ago = float(ticker['result']['list'][0]['prevPrice24h'])
+        
+        cambio_porcentual = ((precio_actual - precio_24h_ago) / precio_24h_ago) * 100
+        return cambio_porcentual
+    except Exception as e:
+        logger(f"Error al obtener el cambio porcentual del precio de BTC: {e}")
+        return None

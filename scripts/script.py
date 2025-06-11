@@ -1129,7 +1129,7 @@ def operar8(simbolos,sr):
     global opened_positions_long, opened_positions_short
     global max_ops_long, max_ops_short, sr_fib_tolerancia, sr_fib_velas,account_usdt_limit, order_book_limit, order_book_delay_divisor
     global sl_multiplicador, tp_multiplicador
-    global sl_percentaje_account,sr_distance, sr_mode
+    global sl_percentaje_account,sr_distance, sr_mode, percentage_max_btc_change
 
     sop_res = sr
     logger(f"Operando con un % de saldo de {account_percentage} primera operacion {saldo_usdt_inicial * (account_percentage / 100)}")
@@ -1207,6 +1207,13 @@ def operar8(simbolos,sr):
                     if symbol in opened_positions:
                         opened_positions.remove(symbol)
 
+
+                    btc_change = get_btc_price_change()
+                    if abs(btc_change) > percentage_max_btc_change:
+                        logger(f"{symbol} Cambio de BTC demasiado alto: {btc_change:.2f}%, saltando")
+                        time.sleep(60*60*2)
+                        continue
+
                     if len(opened_positions) >= max_ops:
                         logger(f"Se alcanzó el límite de posiciones abiertas | {max_ops}.")
                         time.sleep(60)
@@ -1281,7 +1288,7 @@ def operar8(simbolos,sr):
                                 closest_resistance = resistance
 
 
-                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tb:{signal_short.iloc[-1]}\ta:{signal_long.iloc[-1]}\tff: {(fundingRate*100):.4f}\tsupport: {min_distance_percent:.2f}%\tresistance: {min_resistance_distance:.2f}%\t8"
+                    log_message = f"{symbol:<18} Price: {precio:<15.5f}\trsi: {rsi[-1]:<3.1f}\tbtc_change:{btc_change:.2f}%\tff: {(fundingRate*100):.4f}\tsupport: {min_distance_percent:.2f}%\tresistance: {min_resistance_distance:.2f}%\t8"
                     logger(log_message)
                 
                    # si la diferencia absoluta entre min_distance_percent y min_resistance_distance es menor a 5 no operar

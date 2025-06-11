@@ -1600,22 +1600,12 @@ def get_btc_price_change_ticker():
         cache["executing"] = True
         try:
             value = 0.0
-            tickers = exchange.fetch_tickers()
-            ticker = None
-            for i, (symbol, data) in enumerate(list(tickers.items())):
-                    if symbol.endswith('USDT'):
-                        item = {
-                            "symbol":data['info']['symbol'],
-                            "quoteVolume": data['info']['quoteVolume'],
-                            "priceChangePercent": data['info']['priceChangePercent']
-                        }
-                        if item['symbol'] == 'BTCUSDT':
-                            print(f"Encontrado BTCUSDT en tickers: {item}")
-                            ticker = item
-                            break
-                        
-
-            value = float(ticker['priceChangePercent'])
+            ticker = exchange.fetch_ticker('BTC/USDT')
+            
+            if 'info' not in ticker or 'priceChangePercent' not in ticker['info']:
+                return 0.0
+                
+            value = float(ticker['info']['priceChangePercent'])
             cache["value"] = value
             cache["timestamp"] = now
             return value

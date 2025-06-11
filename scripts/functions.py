@@ -1581,7 +1581,7 @@ def get_btc_price_change_ticker():
             get_btc_price_change_ticker._cache = {"value": None, "timestamp": 0}
         cache = get_btc_price_change_ticker._cache
         now = time.time()
-        if cache["value"] is not None and now - cache["timestamp"] < 120:  # 5 minutes cache
+        if cache["value"] is not None and now - cache["timestamp"] < 60:  # 5 minutes cache
             return float(cache["value"])
 
         # If not cached or cache expired, fetch and cache

@@ -1212,10 +1212,6 @@ def operar8(simbolos,sr):
                     btc_change = 0.0
                     print(f"Verificando BTC cambio para {symbol}")
                     btc_change = get_btc_price_change_ticker()
-                    if abs(btc_change) > percentage_max_btc_change:
-                        logger(f"{symbol} Cambio de BTC demasiado alto: {btc_change:.2f}%, saltando")
-                        time.sleep(30)
-                        continue
 
                     if len(opened_positions) >= max_ops:
                         logger(f"Se alcanzó el límite de posiciones abiertas | {max_ops}.")
@@ -1252,12 +1248,10 @@ def operar8(simbolos,sr):
                         'volume': volumes
                     })
 
-                    print(f"Verificando ticker para {symbol}")
                     ticker = client.get_tickers(category='linear', symbol=symbol)
                     precio = float(ticker['result']['list'][0]['lastPrice'])
                     fundingRate = float(ticker['result']['list'][0]['fundingRate'])
 
-                    print(f"fin Verificando ticker para {symbol}")
                     if abs(fundingRate) > 0.0015:  # 0.15% as decimal
                         logger(f"{symbol} Funding rate demasiado alto: {(fundingRate*100):.4f}, saltando")
                         time.sleep(random.randint(sleep_rand_from*60, sleep_rand_to*60))
@@ -1307,6 +1301,12 @@ def operar8(simbolos,sr):
                         if len(opened_positions_short) >= max_ops_short:
                             logger(f"{symbol:<18} operaciones abiertas en short {len(opened_positions_short)} | maximo configurado es {max_ops_short}.")
                             time.sleep(random.randint(sleep_rand_from*20, sleep_rand_to*20))
+                            continue
+
+
+                        if btc_change > percentage_max_btc_change:
+                            logger(f"{symbol} Cambio de BTC demasiado alto para vender: {btc_change:.2f}%, saltando")
+                            time.sleep(30)
                             continue
 
                         # Datos de la moneda precio y pasos.
@@ -1369,6 +1369,11 @@ def operar8(simbolos,sr):
                         if len(opened_positions_long) >= max_ops_long:
                             logger(f"{symbol:<18} operaciones abiertas en long {len(opened_positions_long)} | maximo configurado es {max_ops_long}.")
                             time.sleep(random.randint(sleep_rand_from, sleep_rand_to))
+                            continue
+
+                        if btc_change < (percentage_max_btc_change * -1):
+                            logger(f"{symbol} Cambio de BTC demasiado alto para comprar: {btc_change:.2f}%, saltando")
+                            time.sleep(30)
                             continue
 
                         # Datos de la moneda precio y pasos.

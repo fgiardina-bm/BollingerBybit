@@ -1637,7 +1637,7 @@ def get_btc_price_change_4h():
             get_btc_price_change_4h._cache = {"value": None, "timestamp": 0}
         cache = get_btc_price_change_4h._cache
         now = time.time()
-        if cache["value"] is not None and now - cache["timestamp"] < 900:  # 15 minutos cache
+        if cache["value"] is not None and now - cache["timestamp"] < 300: # 5 minutes cache
             return float(cache["value"])
 
         # Si no está en cache o expiró, obtener y cachear

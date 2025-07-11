@@ -1215,7 +1215,7 @@ def operar8(simbolos,sr):
                     btc_change = get_btc_price_change_4h();
                     if abs(btc_change) > percentage_max_btc_change:
                         logger(f"{symbol} Cambio de BTC demasiado alto para operar: {btc_change:.2f}%, saltando")
-                        time.sleep(120)
+                        time.sleep(random.randint(120, 240))
                         continue
 
                     if len(opened_positions) >= max_ops:

@@ -24,6 +24,10 @@ import os
 import ccxt
 
 client = HTTP(api_key=api_key, api_secret=api_secret, testnet=False)
+binance = ccxt.binance({
+    'enableRateLimit': True,
+    'options': {'defaultType': 'future'}  # Especificar mercado de futuros
+})
 
 def obtener_orderbook(symbol):
     response = client.get_orderbook(category="linear", symbol=symbol)
@@ -1618,4 +1622,59 @@ def get_btc_price_change_ticker():
         logger(f"Error al obtener el cambio porcentual del ticker de BTC: {e}")
         return 0.0
 
+
+
+def get_btc_price_change_4h():
+    """
+    Obtiene el cambio porcentual del precio de BTC en las últimas 4 horas.
     
+    Retorna:
+        float: Cambio porcentual del precio de BTC en las últimas 4 horas.
+    """
+    try:
+        # Cache simple en memoria por 15 minutos
+        if not hasattr(get_btc_price_change_4h, "_cache"):
+            get_btc_price_change_4h._cache = {"value": None, "timestamp": 0}
+        cache = get_btc_price_change_4h._cache
+        now = time.time()
+        if cache["value"] is not None and now - cache["timestamp"] < 900:  # 15 minutos cache
+            return float(cache["value"])
+
+        # Si no está en cache o expiró, obtener y cachear
+        exchange = ccxt.binance({
+            'enableRateLimit': True,
+            'options': {'defaultType': 'future'}
+        })
+        
+        # Verificar si otro proceso ya está ejecutando
+        if cache.get("executing", False):
+            if cache["value"] is not None:
+                return float(cache["value"])
+            return 0.0
+        
+        cache["executing"] = True
+        try:
+            # Obtener datos de las últimas 4 horas (48 velas de 5 minutos)
+            klines = exchange.fetch_ohlcv('BTC/USDT', '5m', limit=48)
+            
+            if not klines or len(klines) < 2:
+                return 0.0
+            
+            # Precio actual (último cierre)
+            precio_actual = float(klines[-1][4])  # close price
+            # Precio hace 4 horas (primer precio en la lista)
+            precio_4h_ago = float(klines[0][4])   # close price
+            
+            # Calcular cambio porcentual
+            cambio_porcentual = ((precio_actual - precio_4h_ago) / precio_4h_ago) * 100
+            
+            cache["value"] = cambio_porcentual
+            cache["timestamp"] = now
+            return cambio_porcentual
+            
+        finally:
+            cache["executing"] = False
+            
+    except Exception as e:
+        logger(f"Error al obtener el cambio porcentual del precio de BTC en 4h: {e}")
+        return 0.0

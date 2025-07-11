@@ -1211,7 +1211,12 @@ def operar8(simbolos,sr):
 
                     btc_change = 0.0
                     print(f"Verificando BTC cambio para {symbol}")
-                    btc_change = get_btc_price_change_ticker()
+                    # btc_change = get_btc_price_change_ticker()
+                    btc_change = get_btc_price_change_4h();
+                    if abs(btc_change) > percentage_max_btc_change:
+                        logger(f"{symbol} Cambio de BTC demasiado alto para operar: {btc_change:.2f}%, saltando")
+                        time.sleep(120)
+                        continue
 
                     if len(opened_positions) >= max_ops:
                         logger(f"Se alcanzó el límite de posiciones abiertas | {max_ops}.")
